@@ -323,7 +323,7 @@ function getLoc(key,name){
 }
 function chipH(key,name){
   const l=getLoc(key,name);
-  const label=(name||'').split('/').join('→');
+  const label=(name||'').split('/').join('、');
   return `<span class="chip" style="background:${l.bg};color:${l.fg}"><span class="dot" style="background:${l.dot}"></span>${label}</span>`;
 }
 function locOpts(key,sel=''){return '<option value="">—</option>'+getMD(key).locTypes.map(l=>`<option ${sel===l.name?'selected':''}>${l.name}</option>`).join('');}
@@ -442,10 +442,10 @@ function rCal(){
     const dstr=ds(calY,calM,d),ld=md.locations[dstr];
     const isT=today.getFullYear()===calY&&today.getMonth()===calM-1&&today.getDate()===d;
     let inner=`<div class="dn">${d}</div><div>`;
-    // 打卡去向「？」或空白的
-    const unknownFromPunch=md.punches.filter(p=>p.date===dstr&&p.name&&(!p.loc||p.loc==='?')).map(p=>p.name);
-    const unknownFromLoc=Object.entries(md.locations[dstr]||{}).filter(([,l])=>!l||l==='?').map(([e])=>e);
-    const unknownEmps=[...new Set([...unknownFromPunch,...unknownFromLoc])];
+    // 有打卡但沒有在月曆標去向的人 → 顯示「？」
+    const punchedNames=md.punches.filter(p=>p.date===dstr&&p.name).map(p=>p.name);
+    const lockedNames=Object.keys(md.locations[dstr]||{}).filter(n=>{const v=md.locations[dstr][n];return v&&v!=='?';});
+    const unknownEmps=punchedNames.filter(n=>!lockedNames.includes(n));
     // 有去向的（排除？）
     const validLd=ld?Object.fromEntries(Object.entries(ld).filter(([,l])=>l&&l!=='?')):{};
     const hasAny=Object.keys(validLd).length>0||unknownEmps.length>0;
@@ -455,11 +455,11 @@ function rCal(){
         // 支援多地點「/」分隔，用第一個地點的顏色
         const firstLoc=l.split('/')[0];
         const lt=getLoc(key,firstLoc);
-        const label=l.split('/').join('→');
-        inner+=`<div class="de" style="background:${lt.bg};color:${lt.fg}">${label}: ${emps.map(e=>e[0]).join(' ')}</div>`;
+        const label=l.split('/').join('、');
+        inner+=`<div class="de" style="background:${lt.bg};color:${lt.fg}">${label}: ${emps.map(e=>e[0]).join('')}</div>`;
       });
     }
-    if(unknownEmps.length>0){inner+=`<div class="de" style="background:#f0ede8;color:#999">？: ${unknownEmps.map(e=>e[0]).join(' ')}</div>`;}
+    if(unknownEmps.length>0){inner+=`<div class="de" style="background:#f0ede8;color:#999">？: ${unknownEmps.map(e=>e[0]).join('')}</div>`;}
     h+=`<div class="cd${isT?' today':''}${hasAny?' hasdata':''}" onclick="clickDay('${dstr}')">${inner}</div></div>`;
   }
   document.getElementById('cal').innerHTML=h;
