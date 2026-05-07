@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小公司會計系統</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 1.5rem 1rem; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 8px; }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid #e0ddd5; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.tab { padding: 8px 12px; border: none; background: none; cursor: pointer; font-size: 13px; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; white-space: nowrap; }
+.tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+.sec { display: none; } .sec.active { display: block; }
+.card { background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.mg { display: grid; grid-template-columns: repeat(auto-fit,minmax(115px,1fr)); gap: 10px; margin-bottom: 1rem; }
+.mt { background: #f5f5f0; border-radius: 8px; padding: .9rem 1rem; }
+.mt-l { font-size: 12px; color: #888; margin-bottom: 3px; }
+.mt-v { font-size: 18px; font-weight: 500; }
+.green{color:#1D9E75;}.amber{color:#BA7517;}.red{color:#A32D2D;}.blue{color:#185FA5;}.purple{color:#534AB7;}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 10px; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #e0ddd5; white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 0.5px solid #e0ddd5; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+input, select { font-size: 13px; font-family: inherit; padding: 5px 8px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; width: 100%; }
+input[type=date],input[type=time] { width: auto; }
+input:focus,select:focus { outline: none; border-color: #888; }
+.btn { padding: 6px 14px; border-radius: 8px; border: 0.5px solid #ccc; background: #f5f5f0; cursor: pointer; font-size: 13px; font-family: inherit; color: #1a1a1a; display:inline-flex;align-items:center;gap:4px; }
+.btn:hover { background: #eceae4; }
+.btn-p { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn-p:hover { opacity: .85; }
+.btn-sm { padding: 3px 8px; font-size: 12px; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.bg-gray{background:#F1EFE8;color:#5F5E5A;}.bg-purple{background:#EEEDFE;color:#534AB7;}.bg-red{background:#FCEBEB;color:#A32D2D;}
+.stitle { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+.mbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff; border: 0.5px solid #ddd; border-radius: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+.mbar-t { font-size: 13px; font-weight: 500; color: #888; }
+.cal { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.ch { text-align: center; font-size: 12px; font-weight: 500; color: #888; padding: 6px 0; }
+.cd { min-height: 68px; border: 0.5px solid #e0ddd5; border-radius: 8px; padding: 4px; background: #fff; cursor: pointer; }
+.cd:hover { background: #f5f5f0; }
+.cd.empty { background: none; border-color: transparent; cursor: default; }
+.cd.today { border-color: #378ADD; }
+.cd.hasdata { background: #f5f5f0; }
+.dn { font-size: 11px; font-weight: 500; color: #888; }
+.de { font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; white-space: normal; word-break: break-all; line-height: 1.4; }
+.etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.etab { padding: 5px 12px; border-radius: 20px; border: 0.5px solid #ccc; background: #f5f5f0; cursor: pointer; font-size: 13px; font-family: inherit; color: #888; }
+.etab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.esum { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 1rem; }
+.esi { background: #f5f5f0; border-radius: 8px; padding: 10px 12px; }
+.esi-l { font-size: 11px; color: #888; margin-bottom: 2px; }
+.esi-v { font-size: 15px; font-weight: 500; }
+.note { font-size: 12px; color: #888; padding: 8px; background: #f5f5f0; border-radius: 8px; margin-top: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sw { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+.sw.sel { border-color: #1a1a1a; }
+.cbw { background: #f0ede8; border-radius: 4px; height: 6px; overflow: hidden; margin-top: 3px; }
+.cb { height: 6px; border-radius: 4px; }
+.trow td { font-weight: 500; border-top: 0.5px solid #ccc !important; border-bottom: none; }
+.mbg { position: fixed; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:999; }
+.mbox { background:#fff; border-radius:12px; padding:1.25rem; width:340px; border:0.5px solid #ddd; max-height:88vh; overflow-y:auto; }
+.sbadge { position:fixed; bottom:16px; right:16px; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:500; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.sbadge.show{opacity:1;} .sbadge.ok{background:#1a1a1a;color:#fff;} .sbadge.err{background:#FCEBEB;color:#A32D2D;} .sbadge.syn{background:#E6F1FB;color:#185FA5;}
+.cdot { width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-left:6px;vertical-align:middle; }
+.cdot.on{background:#1D9E75;} .cdot.off{background:#E24B4A;}
+@media(max-width:600px){ .esum{grid-template-columns:repeat(3,1fr);} .cd{min-height:50px;} th,td{padding:6px 7px;font-size:12px;} }
+</style>
+</head>
+<body>
+<div class="sbadge" id="sbadge"></div>
+<div class="wrap">
+  <h1><i class="ti ti-building-store"></i> 小公司會計系統 <span class="cdot" id="cdot"></span></h1>
+  <div class="tabs">
+    <button class="tab active" onclick="T('summary')"><i class="ti ti-chart-pie"></i> 月結總覽</button>
+    <button class="tab" onclick="T('calendar')"><i class="ti ti-calendar"></i> 月曆去向</button>
+    <button class="tab" onclick="T('salary')"><i class="ti ti-cash"></i> 薪資</button>
+    <button class="tab" onclick="T('expense')"><i class="ti ti-receipt"></i> 支出</button>
+    <button class="tab" onclick="T('settings')"><i class="ti ti-settings"></i> 設定</button>
+  </div>
+
+  <div id="s-summary" class="sec active">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.5rem">
+      <span style="font-size:14px;font-weight:500">查看月份</span>
+      <select id="sum-sel" onchange="rSummary()" style="width:130px"></select>
+    </div>
+    <div id="sum-cnt"></div>
+  </div>
+
+  <div id="s-calendar" class="sec">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn" onclick="chMo(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span style="font-size:15px;font-weight:500" id="cal-title"></span>
+        <button class="btn" onclick="chMo(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <button class="btn btn-p" onclick="clickDay(ds(calY,calM,1))"><i class="ti ti-plus"></i> 新增去向</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="note" style="margin-top:1rem">點擊日期可編輯當日員工去向。員工與去向依當月設定顯示。</div>
+  </div>
+
+  <div id="s-salary" class="sec">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+      <button class="btn" onclick="chSalMo(-1)"><i class="ti ti-chevron-left"></i></button>
+      <span style="font-size:15px;font-weight:500" id="sal-title"></span>
+      <button class="btn" onclick="chSalMo(1)"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div class="mg" id="sal-mg"></div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="stitle" style="margin:0">員工薪資總表</div>
+        <span style="font-size:12px;color:#888"><span class="badge bg-purple">代墊</span> 為代墊公司費用</span>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>姓名</th><th>日薪</th><th>出勤天數</th><th>加班h</th><th>遲到</th><th>開車費</th><th>遲到扣款</th><th>薪資小計</th><th>代墊</th><th>實領合計</th></tr></thead>
+        <tbody id="sal-body"></tbody>
+      </table></div>
+      <div class="note" style="margin-top:10px">實領合計 = 薪資小計 + 代墊金額</div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="stitle" style="margin:0">個人明細</div>
+        <button class="btn btn-p" onclick="openAddPunch()"><i class="ti ti-plus"></i> 新增打卡</button>
+      </div>
+      <div class="etabs" id="etabs"></div>
+      <div class="esum" id="esum"></div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#888">打卡紀錄</div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>日期</th><th>上班</th><th>下班</th><th>去向</th><th>工時/類型</th><th>遲到</th><th>加班</th><th>開車</th><th>當日薪資</th><th></th></tr></thead>
+        <tbody id="punch-body"></tbody>
+      </table></div>
+      <div style="font-size:13px;font-weight:500;margin:1.2rem 0 6px;color:#888">代墊支出</div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>日期</th><th>類別</th><th>說明</th><th>金額</th></tr></thead>
+        <tbody id="adv-body"></tbody>
+      </table></div>
+
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid #e0ddd5">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:#888"><i class="ti ti-camera"></i> 上傳打卡單（AI 自動辨識）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px">正面</div>
+            <div style="border:1.5px dashed #ccc;border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:#fafaf8;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center" onclick="document.getElementById('ocr-front').click()" id="front-area">
+              <i class="ti ti-photo" style="font-size:20px;color:#bbb"></i>
+              <div style="font-size:11px;color:#bbb;margin-top:4px">點擊上傳</div>
+            </div>
+            <input type="file" id="ocr-front" accept="image/*" style="display:none" onchange="previewOcr('front',event)">
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px">背面</div>
+            <div style="border:1.5px dashed #ccc;border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:#fafaf8;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center" onclick="document.getElementById('ocr-back').click()" id="back-area">
+              <i class="ti ti-photo" style="font-size:20px;color:#bbb"></i>
+              <div style="font-size:11px;color:#bbb;margin-top:4px">點擊上傳</div>
+            </div>
+            <input type="file" id="ocr-back" accept="image/*" style="display:none" onchange="previewOcr('back',event)">
+          </div>
+        </div>
+        <button class="btn btn-p" id="ocr-run-btn" onclick="runOcr()" style="display:none;width:100%;justify-content:center"><i class="ti ti-wand"></i> 開始 AI 辨識</button>
+        <div id="ocr-status" style="margin-top:10px;font-size:13px;display:none"></div>
+        <div id="ocr-results" style="margin-top:10px;display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="s-expense" class="sec">
+    <div class="mg" id="exp-mg"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div class="stitle" style="margin:0">支出明細</div>
+        <button class="btn btn-p" onclick="openAddExp()"><i class="ti ti-plus"></i> 新增支出</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>日期</th><th>類別</th><th>說明</th><th>金額</th><th>付款人</th><th></th></tr></thead>
+        <tbody id="exp-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div id="s-settings" class="sec">
+    <div class="card">
+      <div class="stitle">全域設定 <span style="font-size:12px;font-weight:400;color:#888">（所有月份共用）</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><div style="font-size:12px;color:#888;margin-bottom:3px">每日標準工時（小時）</div><input type="number" id="g-hours"></div>
+        <div><div style="font-size:12px;color:#888;margin-bottom:3px">休息扣除（分鐘）</div><input type="number" id="g-break"></div>
+        <div><div style="font-size:12px;color:#888;margin-bottom:3px">標準上班時間</div><input type="time" id="g-start" style="width:100%"></div>
+        <div><div style="font-size:12px;color:#888;margin-bottom:3px">遲到固定扣款（元）</div><input type="number" id="g-fine"></div>
+        <div><div style="font-size:12px;color:#888;margin-bottom:3px">遲到寬限（分鐘）</div><input type="number" id="g-grace"></div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:12px;color:#888;margin-bottom:3px">Anthropic API Key <span style="color:#bbb">（AI 辨識打卡單用）</span></div>
+        <input type="password" id="g-apikey" placeholder="sk-ant-..." style="width:100%;font-family:monospace">
+        <div style="font-size:11px;color:#bbb;margin-top:4px">Key 儲存在 Firebase，請確保只有信任的人能存取此系統。</div>
+      </div>
+      <button class="btn btn-p" style="margin-top:1rem" onclick="saveGlobal()">儲存全域設定</button>
+    </div>
+
+    <div class="mbar">
+      <span class="mbar-t"><i class="ti ti-calendar-event"></i> 每月設定</span>
+      <select id="cfg-sel" onchange="rMthSettings()" style="width:130px"></select>
+      <button class="btn btn-p" onclick="copyPrev()" style="margin-left:auto"><i class="ti ti-copy"></i> 複製上個月設定</button>
+    </div>
+
+    <div class="card">
+      <div class="stitle" id="emp-cfg-title">員工管理</div>
+      <table><thead><tr><th></th><th>姓名</th><th>日薪（元）</th><th></th></tr></thead>
+      <tbody id="emp-cfg-body"></tbody></table>
+      <div style="display:flex;gap:8px;margin-top:1rem;align-items:center;flex-wrap:wrap">
+        <input type="text" id="new-emp" placeholder="姓名" style="width:110px">
+        <input type="number" id="new-wage" placeholder="日薪" style="width:90px">
+        <button class="btn btn-p" onclick="addEmp()"><i class="ti ti-plus"></i> 新增員工</button>
+      </div>
+      <div class="note" style="margin-top:8px">姓名和日薪都可以直接點擊欄位編輯，離開欄位後自動儲存。</div>
+    </div>
+
+    <div class="card">
+      <div class="stitle" id="loc-cfg-title">去向管理</div>
+      <div id="loc-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="new-loc" placeholder="新去向名稱" style="width:130px">
+        <div id="loc-pal" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        <button class="btn btn-p" onclick="addLoc()"><i class="ti ti-plus"></i> 新增</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stitle">支出類別 <span style="font-size:12px;font-weight:400;color:#888">（所有月份共用）</span></div>
+      <div id="cat-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="new-cat" placeholder="新類別名稱" style="width:150px">
+        <button class="btn btn-p" onclick="addCat()"><i class="ti ti-plus"></i> 新增</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="modal-root"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDGVVoHM68Nz59f2epTI1tU7soXl4gELQQ",
+  authDomain: "company-accounts-fd9b8.firebaseapp.com",
+  projectId: "company-accounts-fd9b8",
+  storageBucket: "company-accounts-fd9b8.firebasestorage.app",
+  messagingSenderId: "339764535108",
+  appId: "1:339764535108:web:9f26fa23f9de7bec6bc111"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const REF = doc(db, 'company', 'main');
+
+const PAL = [
+  {bg:'#E6F1FB',fg:'#185FA5',dot:'#378ADD'},{bg:'#EEEDFE',fg:'#534AB7',dot:'#7F77DD'},
+  {bg:'#E1F5EE',fg:'#0F6E56',dot:'#1D9E75'},{bg:'#FAEEDA',fg:'#854F0B',dot:'#EF9F27'},
+  {bg:'#FAECE7',fg:'#993C1D',dot:'#D85A30'},{bg:'#FCEBEB',fg:'#A32D2D',dot:'#E24B4A'},
+  {bg:'#F1EFE8',fg:'#5F5E5A',dot:'#888780'},{bg:'#EAF3DE',fg:'#3B6D11',dot:'#639922'},
+  {bg:'#FBEAF0',fg:'#993556',dot:'#D4537E'},{bg:'#E6F4F8',fg:'#0F4E6E',dot:'#1D7E9E'},
+];
+let palIdx = 0;
+
+const DEF_LOC = [
+  {name:'公司',bg:'#E6F1FB',fg:'#185FA5',dot:'#378ADD'},
+  {name:'客戶端',bg:'#EEEDFE',fg:'#534AB7',dot:'#7F77DD'},
+  {name:'台中',bg:'#E1F5EE',fg:'#0F6E56',dot:'#1D9E75'},
+  {name:'台北',bg:'#FAEEDA',fg:'#854F0B',dot:'#EF9F27'},
+  {name:'工地',bg:'#FAECE7',fg:'#993C1D',dot:'#D85A30'},
+  {name:'倉庫',bg:'#F5C4B3',fg:'#712B13',dot:'#F0997B'},
+  {name:'請假',bg:'#FCEBEB',fg:'#A32D2D',dot:'#E24B4A'},
+  {name:'休息',bg:'#F1EFE8',fg:'#5F5E5A',dot:'#888780'},
+];
+const DEF_EMP = [
+  {name:'王小明',wage:1600},{name:'李小華',wage:1500},{name:'陳大文',wage:1800},
+  {name:'林美美',wage:1450},{name:'張志強',wage:1700},{name:'黃雅婷',wage:1550},
+  {name:'劉建宏',wage:1650},{name:'蔡宜庭',wage:1500},{name:'許俊傑',wage:1750},
+  {name:'周佩君',wage:1480}
+];
+
+// 資料結構
+// global: { hours, breakMin, otRate, startTime, lateFine, grace, expCats }
+// monthData[YYYY-MM]: { employees, locTypes, locations, punches }
+// expenses: [{date,cat,desc,amount,payer}]
+
+let G = { hours:8, breakMin:60, startTime:'09:00', lateFine:300, grace:5, expCats:['材料','吃飯','油錢','停車','工具','雜支','其他'] };
+let MD = {}; // monthData
+let EX = [
+  {date:'2026-04-01',cat:'材料',desc:'鋼筋採購',amount:12500,payer:'陳大文'},
+  {date:'2026-04-02',cat:'吃飯',desc:'工地午餐',amount:850,payer:'王小明'},
+  {date:'2026-04-03',cat:'油錢',desc:'台中來回',amount:1200,payer:'張志強'},
+  {date:'2026-04-05',cat:'工具',desc:'電鑽購入',amount:3800,payer:'王小明'},
+];
+let calY=2026, calM=4, salY=2026, salM=4, actEmp=null, cfgKey='2026-04';
+
+function pad(n){return String(n).padStart(2,'0');}
+function ds(y,m,d){return `${y}-${pad(m)}-${pad(d)}`;}
+function getMD(key){
+  if(!MD[key]){
+    const [y,m]=key.split('-').map(Number);
+    let pm=m-1,py=y;if(pm<1){pm=12;py--;}
+    const pk=`${py}-${pad(pm)}`;const prev=MD[pk];
+    MD[key]={
+      employees:prev?JSON.parse(JSON.stringify(prev.employees)):JSON.parse(JSON.stringify(DEF_EMP)),
+      locTypes:prev?JSON.parse(JSON.stringify(prev.locTypes)):JSON.parse(JSON.stringify(DEF_LOC)),
+      locations:{}, punches:[]
+    };
+  }
+  return MD[key];
+}
+function calKey(){return `${calY}-${pad(calM)}`;}
+function calMD(){return getMD(calKey());}
+function salKey(){return `${salY}-${pad(salM)}`;}
+function salMD(){return getMD(salKey());}
+function chSalMo(d){salM+=d;if(salM>12){salM=1;salY++;}if(salM<1){salM=12;salY--;}rSalary();}
+window.chSalMo=chSalMo;
+function getLoc(key,name){
+  // 支援多地點「/」分隔，取第一個地點
+  const firstName=(name||'').split('/')[0];
+  return getMD(key).locTypes.find(l=>l.name===firstName)||{bg:'#eee',fg:'#666',dot:'#999'};
+}
+function chipH(key,name){
+  const l=getLoc(key,name);
+  const label=(name||'').split('/').join('→');
+  return `<span class="chip" style="background:${l.bg};color:${l.fg}"><span class="dot" style="background:${l.dot}"></span>${label}</span>`;
+}
+function locOpts(key,sel=''){return '<option value="">—</option>'+getMD(key).locTypes.map(l=>`<option ${sel===l.name?'selected':''}>${l.name}</option>`).join('');}
+function catOpts(sel=''){return G.expCats.map(c=>`<option ${sel===c?'selected':''}>${c}</option>`).join('');}
+function empAdv(name){return EX.filter(e=>e.payer===name).reduce((s,e)=>s+e.amount,0);}
+function empAdvL(name){return EX.filter(e=>e.payer===name);}
+function allKeys(){
+  const s=new Set();Object.keys(MD).forEach(k=>s.add(k));EX.forEach(e=>s.add(e.date.slice(0,7)));
+  return [...s].sort().reverse();
+}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+
+// ── sync ──
+function showS(type,msg){const b=document.getElementById('sbadge');b.className='sbadge show '+type;b.innerHTML=msg;if(type!=='syn')setTimeout(()=>b.classList.remove('show'),2500);}
+function setOL(v){const d=document.getElementById('cdot');d.className='cdot '+(v?'on':'off');d.title=v?'已連線 Firebase':'離線';}
+let stimer=null;
+function save(){clearTimeout(stimer);stimer=setTimeout(async()=>{
+  showS('syn','<i class="ti ti-cloud-upload"></i> 同步中…');
+  try{await setDoc(REF,{G,MD,EX});setOL(true);showS('ok','<i class="ti ti-check"></i> 已同步');}
+  catch(e){setOL(false);showS('err','<i class="ti ti-alert-triangle"></i> 同步失敗');}
+},800);}
+
+// ── tab ──
+function T(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['summary','calendar','salary','expense','settings'][i]===t));
+  document.querySelectorAll('.sec').forEach(el=>el.classList.remove('active'));
+  document.getElementById('s-'+t).classList.add('active');
+  if(t==='summary'){iSumSel();rSummary();}
+  if(t==='calendar') rCal();
+  if(t==='salary'){salY=calY;salM=calM;rSalary();}
+  if(t==='expense') rExpense();
+  if(t==='settings') rSettings();
+}
+window.T=T;
+function refCur(){const i=[...document.querySelectorAll('.tab')].findIndex(t=>t.classList.contains('active'));T(['summary','calendar','salary','expense','settings'][i]);}
+
+// ── 月結總覽 ──
+function iSumSel(){
+  const sel=document.getElementById('sum-sel');const cur=sel.value;
+  const keys=allKeys();sel.innerHTML=keys.map(k=>`<option value="${k}" ${k===cur?'selected':''}>${k}</option>`).join('');
+}
+function rSummary(){
+  iSumSel();
+  const m=document.getElementById('sum-sel').value;
+  if(!m){document.getElementById('sum-cnt').innerHTML='<div style="color:#888;padding:2rem;text-align:center">尚無資料</div>';return;}
+  const [,mo]=m.split('-').map(Number);
+  const md=getMD(m);const ed=calcED(m);
+  let totalSal=0;md.employees.forEach(e=>{totalSal+=(ed[e.name]||{net:0}).net;});
+  const mEx=EX.filter(e=>e.date.startsWith(m));
+  const byCat={};mEx.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
+  const totalExp=Object.values(byCat).reduce((a,b)=>a+b,0);
+  const totalCost=totalSal+totalExp;
+  const totalAdv=md.employees.reduce((s,e)=>s+empAdv(e.name),0);
+  const mns=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+  const att=md.employees.filter(e=>(ed[e.name]||{days:0}).days>0);
+  let h=`<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap">
+    <span style="font-size:26px;font-weight:500">${mns[mo-1]}月總成本</span>
+    <span style="font-size:26px;font-weight:500;color:#A32D2D">$${totalCost.toLocaleString()}</span>
+  </div>
+  <div class="mg" style="margin-bottom:1.5rem">
+    <div class="mt"><div class="mt-l">薪資合計</div><div class="mt-v green">$${totalSal.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">支出合計</div><div class="mt-v amber">$${totalExp.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">出勤人數</div><div class="mt-v blue">${att.length} 人</div></div>
+    <div class="mt"><div class="mt-l">支出筆數</div><div class="mt-v">${mEx.length} 筆</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+  <div class="card" style="margin:0"><div class="stitle">員工薪資 + 代墊</div>
+  <table><thead><tr><th>姓名</th><th>薪資</th><th>代墊</th><th>合計</th></tr></thead><tbody>`;
+  md.employees.filter(e=>(ed[e.name]||{days:0}).days>0||empAdv(e.name)>0).forEach(e=>{
+    const d=ed[e.name]||{net:0};const adv=empAdv(e.name);
+    h+=`<tr><td style="font-weight:500">${e.name}</td><td>$${d.net.toLocaleString()}</td>
+      <td>${adv>0?`<span style="color:#534AB7">$${adv.toLocaleString()}</span>`:'—'}</td>
+      <td style="font-weight:500;color:#1D9E75">$${(d.net+adv).toLocaleString()}</td></tr>`;
+  });
+  h+=`<tr class="trow"><td>合計</td><td style="color:#1D9E75">$${totalSal.toLocaleString()}</td>
+    <td style="color:#534AB7">${totalAdv>0?'$'+totalAdv.toLocaleString():'—'}</td>
+    <td style="color:#1D9E75">$${(totalSal+totalAdv).toLocaleString()}</td></tr>
+  </tbody></table></div>
+  <div class="card" style="margin:0"><div class="stitle">支出類別</div>
+  <table><thead><tr><th>類別</th><th>金額</th></tr></thead><tbody>`;
+  if(!Object.keys(byCat).length) h+=`<tr><td colspan="2" style="color:#888;padding:1rem 0">本月無支出</td></tr>`;
+  Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{
+    const p=totalExp>0?Math.round(v/totalExp*100):0;
+    h+=`<tr><td><span class="badge bg-gray">${c}</span></td>
+      <td><div style="font-weight:500">$${v.toLocaleString()} <span style="font-size:11px;color:#888">${p}%</span></div>
+      <div class="cbw"><div class="cb" style="width:${p}%;background:#BA7517"></div></div></td></tr>`;
+  });
+  h+=`<tr class="trow"><td>合計</td><td style="color:#BA7517">$${totalExp.toLocaleString()}</td></tr>
+  </tbody></table></div></div>`;
+  if(totalCost>0){const sp=Math.round(totalSal/totalCost*100);
+    h+=`<div class="card"><div class="stitle">成本結構</div>
+      <div style="display:flex;height:18px;border-radius:9px;overflow:hidden;gap:2px;margin-bottom:8px">
+        <div style="width:${sp}%;background:#1D9E75;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${sp>8?sp+'%':''}</div>
+        <div style="width:${100-sp}%;background:#EF9F27;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${100-sp>8?(100-sp)+'%':''}</div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:12px">
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle"></span>薪資 ${sp}%</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#EF9F27;margin-right:4px;vertical-align:middle"></span>支出 ${100-sp}%</span>
+      </div></div>`;}
+  document.getElementById('sum-cnt').innerHTML=h;
+}
+window.rSummary=rSummary;
+
+// ── 月曆 ──
+function chMo(d){calM+=d;if(calM>12){calM=1;calY++;}if(calM<1){calM=12;calY--;}rCal();}
+window.chMo=chMo;
+function rCal(){
+  const mns=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-title').textContent=`${calY}年 ${mns[calM-1]}`;
+  const key=calKey();const md=calMD();
+  const first=new Date(calY,calM-1,1).getDay(),days=new Date(calY,calM,0).getDate();
+  let h='日一二三四五六'.split('').map(d=>`<div class="ch">${d}</div>`).join('');
+  for(let i=0;i<first;i++) h+='<div class="cd empty"></div>';
+  const today=new Date();
+  for(let d=1;d<=days;d++){
+    const dstr=ds(calY,calM,d),ld=md.locations[dstr];
+    const isT=today.getFullYear()===calY&&today.getMonth()===calM-1&&today.getDate()===d;
+    let inner=`<div class="dn">${d}</div><div>`;
+    // 打卡去向「？」或空白的
+    const unknownFromPunch=md.punches.filter(p=>p.date===dstr&&p.name&&(!p.loc||p.loc==='?')).map(p=>p.name);
+    const unknownFromLoc=Object.entries(md.locations[dstr]||{}).filter(([,l])=>!l||l==='?').map(([e])=>e);
+    const unknownEmps=[...new Set([...unknownFromPunch,...unknownFromLoc])];
+    // 有去向的（排除？）
+    const validLd=ld?Object.fromEntries(Object.entries(ld).filter(([,l])=>l&&l!=='?')):{};
+    const hasAny=Object.keys(validLd).length>0||unknownEmps.length>0;
+    if(Object.keys(validLd).length>0){
+      const g={};Object.entries(validLd).forEach(([e,l])=>{if(!g[l])g[l]=[];g[l].push(e);});
+      Object.entries(g).forEach(([l,emps])=>{
+        // 支援多地點「/」分隔，用第一個地點的顏色
+        const firstLoc=l.split('/')[0];
+        const lt=getLoc(key,firstLoc);
+        const label=l.split('/').join('→');
+        inner+=`<div class="de" style="background:${lt.bg};color:${lt.fg}">${label}: ${emps.map(e=>e[0]).join(' ')}</div>`;
+      });
+    }
+    if(unknownEmps.length>0){inner+=`<div class="de" style="background:#f0ede8;color:#999">？: ${unknownEmps.map(e=>e[0]).join(' ')}</div>`;}
+    h+=`<div class="cd${isT?' today':''}${hasAny?' hasdata':''}" onclick="clickDay('${dstr}')">${inner}</div></div>`;
+  }
+  document.getElementById('cal').innerHTML=h;
+}
+function clickDay(dstr){
+  const key=dstr.slice(0,7);const md=getMD(key);const ld=md.locations[dstr]||{};
+  const [y,m]=dstr.split('-');const d=parseInt(dstr.split('-')[2]);
+  // 拆解現有去向（支援多地點，以「/」分隔）
+  const getCurLocs=(n)=>{const v=ld[n]||'';return v?v.split('/'):[];};
+  openModal(`${y}年${parseInt(m)}月${d}日 去向`,
+    md.employees.map(e=>{
+      const curLocs=getCurLocs(e.name);
+      const boxes=md.locTypes.map(l=>
+        `<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;white-space:nowrap">
+          <input type="checkbox" name="loc-${e.name}" value="${l.name}" ${curLocs.includes(l.name)?'checked':''} style="width:auto;accent-color:${l.dot}">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${l.dot};flex-shrink:0"></span>
+          ${l.name}
+        </label>`).join('');
+      return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:0.5px solid #f0ede8">
+        <div style="font-size:13px;font-weight:500;margin-bottom:6px">${e.name}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${boxes}</div>
+      </div>`;
+    }).join(''),`saveDayLoc('${dstr}')`);
+}
+window.clickDay=clickDay;
+function saveDayLoc(dstr){
+  const key=dstr.slice(0,7);const md=getMD(key);
+  const obj={};
+  md.employees.forEach(e=>{
+    const checked=[...document.querySelectorAll(`input[name="loc-${e.name}"]:checked`)].map(cb=>cb.value);
+    if(checked.length>0) obj[e.name]=checked.join('/');
+  });
+  if(Object.keys(obj).length>0)md.locations[dstr]=obj;else delete md.locations[dstr];
+  closeModal();rCal();save();
+}
+window.saveDayLoc=saveDayLoc;
+
+// ── 薪資 ──
+// ── 薪資計算核心 ──
+// 計算單筆打卡的工時、加班時數、遲到
+function calcP(p){
+  if(!p.in||!p.out) return{hours:0,ot:0,autoOt:0,late:false,isSunday:false,outMin:0};
+  const[ih,im]=p.in.split(':').map(Number);
+  const[oh,om]=p.out.split(':').map(Number);
+  const[sh,sm]=G.startTime.split(':').map(Number); // 標準上班時間 (預設 08:00)
+  const totalMin=(oh*60+om)-(ih*60+im)-G.breakMin;
+  const hours=Math.max(0,totalMin/60);
+  // 8:00 前打卡不算加班起點，超過 8 小時才算加班
+  const stdStart=sh*60+sm; // 480 = 08:00
+  const actualStart=Math.max(ih*60+im, stdStart); // 最早從 8:00 開始算
+  const workMin=(oh*60+om)-actualStart-G.breakMin;
+  const autoOt=Math.max(0,(workMin/60)-G.hours);
+  const ot=(p.manualOt!=null)?p.manualOt:autoOt;
+  const sysLate=(ih*60+im)>(stdStart+G.grace);
+  const late=p.manualLate!=null?p.manualLate:sysLate;
+  const isSunday=new Date(p.date).getDay()===0;
+  return{hours,ot,autoOt,late,isSunday,outMin:oh*60+om};
+}
+
+// 計算單筆打卡的日薪金額
+function calcDailyPay(p, wage){
+  if(!p.in||!p.out) return 0;
+  const{hours,ot,isSunday,outMin}=calcP(p);
+  if(hours===0) return 0;
+  const hourly=wage/G.hours; // 時薪
+  // 加班費：(時薪×1.33+時薪)×時數，四捨五入到十位
+  const otHourly=hourly*1.33+hourly; // 時薪 × 2.33
+  const otPay=Math.round(otHourly*ot/10)*10;
+
+  // 手動半天
+  if(p.halfDay) return Math.round(wage/2);
+
+  // 星期日特殊規則（以下班時間判斷）
+  if(isSunday){
+    if(outMin < 15*60)       return Math.round(wage*1.5);  // 15:00 前 → 1.5 天
+    else if(outMin < 17*60)  return wage*2;                // 15:00~17:00 → 2 天
+    else if(outMin < 20*60)  return Math.round(wage*2.5);  // 17:00~20:00 → 2.5 天
+    else                     return wage*3;                // 20:00 後 → 3 天
+  }
+
+  // 平日：日薪 + 加班費
+  return wage+otPay;
+}
+
+// 取得該日期是該年第幾週（週一為起點）
+function getWeekId(dateStr){
+  const d=new Date(dateStr);
+  const day=d.getDay()||7; // 1=Mon..7=Sun
+  const monday=new Date(d);monday.setDate(d.getDate()-(day-1));
+  return monday.toISOString().slice(0,10);
+}
+function calcED(key){
+  const md=getMD(key);const ed={};
+  md.employees.forEach(e=>{
+    ed[e.name]={wage:e.wage,days:0,ot:0,late:0,lateWeeks:new Set(),basePay:0,lateFine:0,drivePay:0,net:0};
+  });
+  md.punches.forEach(p=>{
+    if(!ed[p.name])return;
+    const{hours,ot,late}=calcP(p);
+    if(hours>0){
+      const d=ed[p.name];
+      d.days+=(p.halfDay?0.5:1);
+      d.ot+=ot;
+      if(late){
+        d.late++;
+        // 週一～六只算一次，以該週週一日期為 key
+        const dow=new Date(p.date).getDay();
+        if(dow!==0){ // 不是週日
+          const wid=getWeekId(p.date);
+          d.lateWeeks.add(wid);
+        }
+      }
+      d.drivePay+=(p.driveFee||0);
+      d.basePay+=calcDailyPay(p,d.wage);
+    }
+  });
+  md.employees.forEach(e=>{
+    const d=ed[e.name];
+    // 遲到：每週（一～六）只扣一次
+    d.lateFine=d.lateWeeks.size*G.lateFine;
+    d.net=d.basePay-d.lateFine+d.drivePay;
+  });
+  return ed;
+}
+function rSalary(){
+  const mns=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const titleEl=document.getElementById('sal-title');
+  if(titleEl) titleEl.textContent=`${salY}年 ${mns[salM-1]}`;
+  const key=salKey();const md=salMD();
+  if(!actEmp||!md.employees.find(e=>e.name===actEmp)) actEmp=md.employees[0]?.name;
+  const ed=calcED(key);
+  const tot={pay:0,ot:0,late:0,days:0,adv:0};
+  md.employees.forEach(e=>{const d=ed[e.name]||{};tot.pay+=d.net||0;tot.ot+=d.ot||0;tot.late+=d.late||0;tot.days+=d.days||0;tot.adv+=empAdv(e.name);});
+  document.getElementById('sal-mg').innerHTML=`
+    <div class="mt"><div class="mt-l">薪資合計</div><div class="mt-v green">$${tot.pay.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">代墊合計</div><div class="mt-v purple">$${tot.adv.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">實領合計</div><div class="mt-v blue">$${(tot.pay+tot.adv).toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">加班時數</div><div class="mt-v amber">${tot.ot.toFixed(1)} hr</div></div>
+    <div class="mt"><div class="mt-l">遲到次數</div><div class="mt-v red">${tot.late} 次</div></div>`;
+  document.getElementById('sal-body').innerHTML=md.employees.map(e=>{
+    const d=ed[e.name]||{days:0,ot:0,late:0,basePay:0,lateFine:0,drivePay:0,net:0};const adv=empAdv(e.name);
+    return `<tr><td style="font-weight:500">${e.name}</td><td>${e.wage.toLocaleString()}</td>
+    <td>${d.days}</td><td>${d.ot.toFixed(1)}</td>
+    <td>${d.late>0?`<span class="badge bg-red">${d.late}</span>`:'0'}</td>
+    <td>${d.drivePay>0?`<span style="color:#0F6E56">$${d.drivePay.toLocaleString()}</span>`:'—'}</td>
+    <td>${d.lateFine>0?`<span style="color:#A32D2D">-$${d.lateFine.toLocaleString()}</span>`:'0'}</td>
+    <td style="font-weight:500">$${d.net.toLocaleString()}</td>
+    <td>${adv>0?`<span class="badge bg-purple">+$${adv.toLocaleString()}</span>`:'—'}</td>
+    <td style="font-weight:500;color:#1D9E75">$${(d.net+adv).toLocaleString()}</td></tr>`;
+  }).join('');
+  document.getElementById('etabs').innerHTML=md.employees.map(e=>
+    `<button class="etab ${e.name===actEmp?'active':''}" onclick="selEmp('${e.name}')">${e.name}</button>`).join('');
+  rEmpDetail(ed,key,md);
+}
+function selEmp(n){actEmp=n;document.querySelectorAll('.etab').forEach(el=>el.classList.toggle('active',el.textContent===n));rEmpDetail(calcED(salKey()),salKey(),salMD());}
+window.selEmp=selEmp;
+function rEmpDetail(ed,key,md){
+  const ec=md.employees.find(e=>e.name===actEmp);if(!ec)return;
+  const d=ed[actEmp]||{days:0,ot:0,late:0,net:0,drivePay:0};const adv=empAdv(actEmp);
+  document.getElementById('esum').innerHTML=`
+    <div class="esi"><div class="esi-l">出勤天數</div><div class="esi-v">${d.days} 天</div></div>
+    <div class="esi"><div class="esi-l">加班時數</div><div class="esi-v" style="color:#BA7517">${d.ot.toFixed(1)} hr</div></div>
+    <div class="esi"><div class="esi-l">遲到次數</div><div class="esi-v" style="color:${d.late>0?'#A32D2D':'inherit'}">${d.late} 次</div></div>
+    <div class="esi"><div class="esi-l">開車費</div><div class="esi-v" style="color:#0F6E56">$${(d.drivePay||0).toLocaleString()}</div></div>
+    <div class="esi"><div class="esi-l">薪資小計</div><div class="esi-v" style="color:#1D9E75">$${d.net.toLocaleString()}</div></div>
+    <div class="esi" style="${adv>0?'border:0.5px solid #CEBBF8;border-radius:8px':''}">
+      <div class="esi-l">代墊金額</div><div class="esi-v" style="color:#534AB7">$${adv.toLocaleString()}</div></div>`;
+  // 合併打卡紀錄和月曆去向，兩邊資料都要顯示
+  const punchMap={};
+  md.punches.filter(p=>p.name===actEmp).forEach(p=>{punchMap[p.date]=p;});
+  // 找月曆有去向但沒打卡的日期
+  const calDates=Object.keys(md.locations).filter(d=>md.locations[d][actEmp]).sort();
+  calDates.forEach(d=>{
+    if(!punchMap[d]){
+      // 有去向但沒打卡紀錄，補一筆虛擬紀錄
+      punchMap[d]={date:d,name:actEmp,in:null,out:null,loc:md.locations[d][actEmp],_calOnly:true};
+    }
+  });
+  const my=Object.values(punchMap).sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('punch-body').innerHTML=!my.length
+    ?`<tr><td colspan="9" style="text-align:center;color:#888;padding:1.5rem">尚無打卡紀錄</td></tr>`
+    :my.map((p,pi)=>{
+      const{hours,ot,autoOt,late,isSunday,outMin}=calcP(p);
+      const rawLoc=p.loc||md.locations[p.date]?.[p.name];
+      // 有打卡但月曆沒去向 → 顯示「？」
+      const loc=p._calOnly?rawLoc:(rawLoc||'？');
+      const dn=p._calOnly?0:calcDailyPay(p,ec.wage)-(late?G.lateFine:0);
+      const isManualOt=p.manualOt!=null;
+      const otDisplay=ot>0
+        ?`<span style="color:#BA7517">+${ot.toFixed(1)}h${isManualOt?'<span title="手動調整" style="font-size:10px">✎</span>':''}</span>`
+        :(isManualOt&&ot===0?'<span style="color:#888;font-size:11px">0h✎</span>':'—');
+      // 日期標籤
+      const dowNames=['日','一','二','三','四','五','六'];
+      const dow=new Date(p.date).getDay();
+      const dateLabel=`${p.date.slice(5)} <span style="font-size:10px;padding:1px 5px;border-radius:4px;${isSunday?'background:#FCEBEB;color:#A32D2D':'background:#f5f5f0;color:#888'}">${dowNames[dow]}</span>`;
+      // 類型標籤
+      let typeTag='';
+      if(p.halfDay) typeTag='<span class="badge" style="background:#FAEEDA;color:#854F0B">半天</span>';
+      else if(isSunday&&outMin<15*60)  typeTag='<span class="badge" style="background:#EEEDFE;color:#534AB7">日×1.5</span>';
+      else if(isSunday&&outMin<17*60)  typeTag='<span class="badge" style="background:#FAECE7;color:#993C1D">日×2</span>';
+      else if(isSunday&&outMin<20*60)  typeTag='<span class="badge" style="background:#FCEBEB;color:#A32D2D">日×2.5</span>';
+      else if(isSunday)                typeTag='<span class="badge" style="background:#A32D2D;color:#fff">日×3</span>';
+      return `<tr>
+        <td>${dateLabel}</td>
+        <td>${p.in||'—'}</td><td>${p.out||'—'}</td>
+        <td>${loc!=='—'?chipH(key,loc):loc}</td>
+        <td>${hours.toFixed(1)}h ${typeTag}</td>
+        <td>${late?'<span class="badge bg-red">遲到</span>':'—'}</td>
+        <td>${otDisplay}</td>
+        <td>${p.driveFee!=null?'<span style="color:#0F6E56">✔</span>':'—'}</td>
+        <td style="font-weight:500">$${dn.toLocaleString()}</td>
+        <td style="white-space:nowrap">
+          ${p._calOnly
+            ? '<span style="font-size:11px;color:#bbb">僅去向</span>'
+            : `<button class="btn btn-sm" style="margin-right:4px" onclick="editPunch('${key}','${p.date}')"><i class="ti ti-pencil"></i></button>
+               <button class="btn btn-sm" onclick="delPunch('${key}','${p.date}')"><i class="ti ti-trash"></i></button>`
+          }
+        </td></tr>`;}).join('');
+  const al=empAdvL(actEmp);
+  document.getElementById('adv-body').innerHTML=!al.length
+    ?`<tr><td colspan="4" style="text-align:center;color:#888;padding:1.5rem">本員工無代墊支出</td></tr>`
+    :al.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>
+      `<tr style="background:#fafaf8"><td>${e.date.slice(5)}</td><td><span class="badge bg-gray">${e.cat}</span></td><td>${e.desc}</td><td style="font-weight:500;color:#534AB7">$${e.amount.toLocaleString()}</td></tr>`
+    ).join('')+`<tr class="trow"><td colspan="3" style="padding-top:10px">代墊合計</td><td style="font-weight:500;color:#534AB7;padding-top:10px">$${al.reduce((s,e)=>s+e.amount,0).toLocaleString()}</td></tr>`;
+}
+function delPunch(key,dateStr){
+  const md=getMD(key);
+  const target=md.punches.find(p=>p.name===actEmp&&p.date===dateStr);
+  if(!target||!confirm('確定刪除？'))return;
+  md.punches=md.punches.filter(p=>p!==target);rSalary();save();
+}
+window.delPunch=delPunch;
+function editPunch(key,dateStr){
+  const md=getMD(key);
+  const p=md.punches.find(pp=>pp.name===actEmp&&pp.date===dateStr);if(!p)return;
+  const{autoOt,late:sysLate}=calcP(p);
+  const late=p.manualLate!=null?p.manualLate:sysLate;
+  const currentOt=p.manualOt!=null?p.manualOt:autoOt;
+  openModal('編輯打卡紀錄',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="ep-date" value="${p.date}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">上班時間</div>
+      <input type="time" id="ep-in" value="${p.in||''}" style="width:100%" oninput="updateAutoOt()"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">下班時間</div>
+      <input type="time" id="ep-out" value="${p.out||''}" style="width:100%" oninput="updateAutoOt()"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">去向</div>
+      <select id="ep-loc">${locOpts(key,p.loc||'')}</select></div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:12px;color:#888">加班時數（小時）</span>
+        <span id="ep-auto-label" style="font-size:11px;color:#888">系統計算：${autoOt.toFixed(1)}h</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="ep-ot" value="${currentOt.toFixed(1)}" step="0.5" min="0" style="width:100px">
+        <button type="button" class="btn btn-sm" onclick="resetAutoOt(${autoOt})" style="white-space:nowrap;flex-shrink:0">
+          <i class="ti ti-refresh"></i> 還原系統值
+        </button>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:4px">可直接修改，或點「還原系統值」套用系統計算結果</div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid #e0ddd5">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ep-halfday" ${p.halfDay?'checked':''} style="width:auto;accent-color:#1a1a1a">
+          <span>半天出勤 <span style="font-size:11px;color:#888">（算半薪）</span></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ep-late" ${p.manualLate===true?'checked':p.manualLate===false?'':late?'checked':''} style="width:auto;accent-color:#A32D2D">
+          <span style="color:#A32D2D">遲到 <span style="font-size:11px;color:#888">（系統判斷：${late?'是':'否'}）</span></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ep-drive" ${p.driveFee!=null?'checked':''} onchange="toggleDriveInput()" style="width:auto;accent-color:#1a1a1a">
+          <span>有開車</span>
+        </label>
+      </div>
+      <div id="ep-drive-row" style="display:${p.driveFee!=null?'flex':'none'};align-items:center;gap:8px;margin-top:8px">
+        <input type="number" id="ep-drive-fee" value="${p.driveFee!=null?p.driveFee:200}" min="0" style="width:100px">
+        <span style="font-size:12px;color:#888">元</span>
+        <button type="button" class="btn btn-sm" onclick="resetDriveFee()">預設值</button>
+      </div>
+    </div>`,
+    `saveEditPunch('${key}','${p.date}')`);
+}
+window.editPunch=editPunch;
+function toggleDriveInput(){
+  const checked=document.getElementById('ep-drive')?.checked;
+  const row=document.getElementById('ep-drive-row');
+  if(row) row.style.display=checked?'flex':'none';
+}
+window.toggleDriveInput=toggleDriveInput;
+function resetDriveFee(){
+  const el=document.getElementById('ep-drive-fee');
+  if(el) el.value=200;
+}
+window.resetDriveFee=resetDriveFee;
+function updateAutoOt(){
+  // 當時間改變時，即時顯示新的系統計算加班時數
+  const inVal=document.getElementById('ep-in')?.value;
+  const outVal=document.getElementById('ep-out')?.value;
+  const label=document.getElementById('ep-auto-label');
+  if(!inVal||!outVal||!label)return;
+  const[ih,im]=inVal.split(':').map(Number),[oh,om]=outVal.split(':').map(Number);
+  const hours=Math.max(0,((oh*60+om)-(ih*60+im)-G.breakMin)/60);
+  const autoOt=Math.max(0,hours-G.hours);
+  label.textContent=`系統計算：${autoOt.toFixed(1)}h`;
+}
+window.updateAutoOt=updateAutoOt;
+function resetAutoOt(autoOt){
+  const el=document.getElementById('ep-ot');
+  if(el) el.value=autoOt.toFixed(1);
+}
+window.resetAutoOt=resetAutoOt;
+function saveEditPunch(key,dateStr){
+  const md=getMD(key);
+  const p=md.punches.find(pp=>pp.name===actEmp&&pp.date===dateStr);if(!p){closeModal();return;}
+  const newDate=document.getElementById('ep-date').value;
+  const newIn=document.getElementById('ep-in').value;
+  const newOut=document.getElementById('ep-out').value;
+  const newLoc=document.getElementById('ep-loc').value;
+  const otInput=parseFloat(document.getElementById('ep-ot').value);
+  const hasDrive=document.getElementById('ep-drive')?.checked;
+  const driveFee=hasDrive?Number(document.getElementById('ep-drive-fee')?.value||0):null;
+  const halfDay=document.getElementById('ep-halfday')?.checked||false;
+  // 遲到：如果手動勾選與系統判斷不同，才儲存 manualLate
+  const lateChecked=document.getElementById('ep-late')?.checked||false;
+  const{late:sysL}=calcP({...p,date:newDate,in:newIn,out:newOut});
+  const manualLate=(lateChecked!==sysL)?lateChecked:null;
+  // 計算系統自動值，看是否和手動值一致
+  const[ih,im]=newIn.split(':').map(Number),[oh,om]=newOut.split(':').map(Number);
+  const hours=Math.max(0,((oh*60+om)-(ih*60+im)-G.breakMin)/60);
+  const sysOt=Math.max(0,hours-G.hours);
+  // 若手動值和系統值一致就清除 manualOt（不另存），否則記錄手動值
+  const manualOt=(!isNaN(otInput)&&Math.abs(otInput-sysOt)>0.01)?otInput:null;
+
+  if(newDate!==p.date){
+    const oldDate=p.date;
+    if(md.locations[oldDate]){delete md.locations[oldDate][p.name];if(!Object.keys(md.locations[oldDate]).length)delete md.locations[oldDate];}
+    const newKey=newDate.slice(0,7);const newMd=getMD(newKey);
+    if(newLoc&&newLoc!=='?'){if(!newMd.locations[newDate])newMd.locations[newDate]={};newMd.locations[newDate][p.name]=newLoc;}
+    if(newKey!==key){
+      md.punches=md.punches.filter(pp=>pp!==p);
+      const np={...p,date:newDate,in:newIn,out:newOut,loc:newLoc};
+      if(manualOt!=null)np.manualOt=manualOt;else delete np.manualOt;
+      if(driveFee!=null)np.driveFee=driveFee;else delete np.driveFee;
+      if(halfDay)np.halfDay=true;else delete np.halfDay;
+      if(manualLate!=null)np.manualLate=manualLate;else delete np.manualLate;
+      newMd.punches.push(np);
+    } else {
+      p.date=newDate;p.in=newIn;p.out=newOut;p.loc=newLoc;
+      if(manualOt!=null)p.manualOt=manualOt;else delete p.manualOt;
+      if(driveFee!=null)p.driveFee=driveFee;else delete p.driveFee;
+      if(halfDay)p.halfDay=true;else delete p.halfDay;
+      if(manualLate!=null)p.manualLate=manualLate;else delete p.manualLate;
+      if(newLoc&&newLoc!=='?'){if(!md.locations[newDate])md.locations[newDate]={};md.locations[newDate][p.name]=newLoc;}
+    }
+  } else {
+    p.in=newIn;p.out=newOut;p.loc=newLoc;
+    if(manualOt!=null)p.manualOt=manualOt;else delete p.manualOt;
+    if(driveFee!=null)p.driveFee=driveFee;else delete p.driveFee;
+    if(halfDay)p.halfDay=true;else delete p.halfDay;
+    if(manualLate!=null)p.manualLate=manualLate;else delete p.manualLate;
+    if(newLoc&&newLoc!=='?'){if(!md.locations[p.date])md.locations[p.date]={};md.locations[p.date][p.name]=newLoc;}
+  }
+  closeModal();rSalary();save();
+}
+window.saveEditPunch=saveEditPunch;
+function openAddPunch(){
+  const key=salKey();const md=salMD();
+  openModal('新增打卡紀錄',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">員工</div>
+      <select id="p-name">${md.employees.map(e=>`<option ${e.name===actEmp?'selected':''}>${e.name}</option>`).join('')}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="p-date" value="${todayStr()}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">上班時間</div>
+      <input type="time" id="p-in" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">下班時間</div>
+      <input type="time" id="p-out" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">去向</div>
+      <select id="p-loc"><option value="?">？（未知）</option>${locOpts(key)}</select></div>`,'savePunch()');
+}
+window.openAddPunch=openAddPunch;
+function savePunch(){
+  const pd=document.getElementById('p-date').value;
+  const pkey=pd.slice(0,7);const md=getMD(pkey);
+  const p={date:pd,name:document.getElementById('p-name').value,in:document.getElementById('p-in').value,out:document.getElementById('p-out').value,loc:document.getElementById('p-loc').value};
+  if(p.date&&p.name){
+    md.punches.push(p);
+    // 只有有實際去向（非？）才寫入月曆
+    if(p.loc&&p.loc!=='?'){
+      if(!md.locations[p.date])md.locations[p.date]={};
+      md.locations[p.date][p.name]=p.loc;
+    }
+    actEmp=p.name;
+  }
+  closeModal();rSalary();save();
+}
+window.savePunch=savePunch;
+
+// ── 支出 ──
+function rExpense(){
+  const byCat={};G.expCats.forEach(c=>byCat[c]=0);let total=0;
+  EX.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;total+=e.amount;});
+  const top=Object.entries(byCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('exp-mg').innerHTML=
+    `<div class="mt"><div class="mt-l">支出總計</div><div class="mt-v red">$${total.toLocaleString()}</div></div>`+
+    top.slice(0,3).map(([c,v])=>`<div class="mt"><div class="mt-l">${c}</div><div class="mt-v amber">$${v.toLocaleString()}</div></div>`).join('');
+  const md=calMD();
+  document.getElementById('exp-body').innerHTML=EX.map((e,i)=>
+    `<tr><td>${e.date.slice(5)}</td><td><span class="badge bg-gray">${e.cat}</span></td><td>${e.desc}</td>
+    <td style="font-weight:500">$${e.amount.toLocaleString()}</td><td>${e.payer||'—'}</td>
+    <td><button class="btn btn-sm" onclick="delExp(${i})"><i class="ti ti-trash"></i></button></td></tr>`).join('');
+}
+function delExp(i){if(confirm('確定刪除？')){EX.splice(i,1);rExpense();save();}}
+window.delExp=delExp;
+function openAddExp(){
+  const md=salMD();
+  openModal('新增支出',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="e-date" value="${todayStr()}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">類別</div>
+      <select id="e-cat">${catOpts()}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">說明</div>
+      <input type="text" id="e-desc" placeholder="項目說明"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
+      <input type="number" id="e-amt" placeholder="0"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">付款人</div>
+      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>`,'saveExp()');
+}
+window.openAddExp=openAddExp;
+function saveExp(){
+  const e={date:document.getElementById('e-date').value,cat:document.getElementById('e-cat').value,
+    desc:document.getElementById('e-desc').value,amount:Number(document.getElementById('e-amt').value),payer:document.getElementById('e-payer').value};
+  if(e.date&&e.amount)EX.push(e);closeModal();rExpense();save();
+}
+window.saveExp=saveExp;
+
+// ── 設定 ──
+function rSettings(){
+  document.getElementById('g-hours').value=G.hours;document.getElementById('g-break').value=G.breakMin;
+  document.getElementById('g-start').value=G.startTime;
+  document.getElementById('g-fine').value=G.lateFine;document.getElementById('g-grace').value=G.grace;
+  if(G.apiKey) document.getElementById('g-apikey').value=G.apiKey;
+  const sel=document.getElementById('cfg-sel');const keys=allKeys();
+  if(!keys.includes(cfgKey)) cfgKey=keys[0]||`${calY}-${pad(calM)}`;
+  sel.innerHTML=keys.map(k=>`<option value="${k}" ${k===cfgKey?'selected':''}>${k}</option>`).join('');
+  rMthSettings();rCatList();rLocPal();
+}
+function saveGlobal(){
+  G.hours=+document.getElementById('g-hours').value;G.breakMin=+document.getElementById('g-break').value;
+  G.startTime=document.getElementById('g-start').value;
+  G.lateFine=+document.getElementById('g-fine').value;G.grace=+document.getElementById('g-grace').value;
+  const apiKey=document.getElementById('g-apikey').value.trim();
+  if(apiKey) G.apiKey=apiKey;
+  save();alert('全域設定已儲存！');
+}
+window.saveGlobal=saveGlobal;
+function rMthSettings(){
+  cfgKey=document.getElementById('cfg-sel').value||cfgKey;
+  const md=getMD(cfgKey);const [y,m]=cfgKey.split('-');
+  document.getElementById('emp-cfg-title').textContent=`員工管理 — ${y}年${parseInt(m)}月`;
+  document.getElementById('loc-cfg-title').textContent=`去向管理 — ${y}年${parseInt(m)}月`;
+  rEmpCfg(md);rLocList(md);
+}
+window.rMthSettings=rMthSettings;
+function copyPrev(){
+  cfgKey=document.getElementById('cfg-sel').value||cfgKey;
+  const [y,m]=cfgKey.split('-').map(Number);let pm=m-1,py=y;if(pm<1){pm=12;py--;}
+  const pk=`${py}-${pad(pm)}`;
+  if(!MD[pk]){alert(`找不到 ${pk} 的設定`);return;}
+  const md=getMD(cfgKey);const prev=MD[pk];
+  md.employees=JSON.parse(JSON.stringify(prev.employees));
+  md.locTypes=JSON.parse(JSON.stringify(prev.locTypes));
+  rMthSettings();save();alert(`已從 ${pk} 複製員工和去向設定！`);
+}
+window.copyPrev=copyPrev;
+
+// 員工（按月，可編輯姓名）
+function rEmpCfg(md){
+  document.getElementById('emp-cfg-body').innerHTML=md.employees.map((e,i)=>`
+    <tr draggable="true" data-i="${i}" ondragstart="empDragStart(event)" ondragover="empDragOver(event)" ondrop="empDrop(event)" ondragend="empDragEnd()" style="cursor:grab">
+      <td style="color:#bbb;padding-right:4px;width:24px;cursor:grab"><i class="ti ti-grip-vertical"></i></td>
+      <td><input type="text" value="${e.name}" style="width:100px" onblur="renEmp(${i},this.value.trim())"></td>
+      <td><input type="number" value="${e.wage}" style="width:90px" onblur="chgWage(${i},+this.value)"></td>
+      <td><button class="btn btn-sm" onclick="delEmp(${i})"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+}
+let dragSrcIdx=null;
+function empDragStart(e){
+  dragSrcIdx=+e.currentTarget.dataset.i;
+  e.currentTarget.style.opacity='0.4';
+  e.dataTransfer.effectAllowed='move';
+}
+window.empDragStart=empDragStart;
+function empDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('#emp-cfg-body tr').forEach(r=>r.style.borderTop='');
+  e.currentTarget.style.borderTop='2px solid #1a1a1a';
+}
+window.empDragOver=empDragOver;
+function empDrop(e){
+  e.preventDefault();
+  const targetIdx=+e.currentTarget.dataset.i;
+  if(dragSrcIdx===null||dragSrcIdx===targetIdx)return;
+  const md=getMD(cfgKey);
+  const moved=md.employees.splice(dragSrcIdx,1)[0];
+  md.employees.splice(targetIdx,0,moved);
+  rEmpCfg(md);save();
+}
+window.empDrop=empDrop;
+function empDragEnd(){
+  document.querySelectorAll('#emp-cfg-body tr').forEach(r=>{r.style.opacity='';r.style.borderTop='';});
+  dragSrcIdx=null;
+}
+window.empDragEnd=empDragEnd;
+function renEmp(i,n){
+  if(!n)return;const md=getMD(cfgKey);const old=md.employees[i].name;if(n===old)return;
+  md.employees[i].name=n;
+  md.punches.forEach(p=>{if(p.name===old)p.name=n;});
+  Object.values(md.locations).forEach(day=>{if(day[old]!==undefined){day[n]=day[old];delete day[old];}});
+  save();
+}
+window.renEmp=renEmp;
+function chgWage(i,w){if(w>0){getMD(cfgKey).employees[i].wage=w;save();}}
+window.chgWage=chgWage;
+function addEmp(){
+  const n=document.getElementById('new-emp').value.trim();const w=Number(document.getElementById('new-wage').value);
+  if(!n||!w)return;const md=getMD(cfgKey);
+  md.employees.push({name:n,wage:w});
+  document.getElementById('new-emp').value='';document.getElementById('new-wage').value='';
+  rEmpCfg(md);save();
+}
+window.addEmp=addEmp;
+function delEmp(i){
+  const md=getMD(cfgKey);if(!confirm(`確定刪除「${md.employees[i].name}」？`))return;
+  md.employees.splice(i,1);rEmpCfg(md);save();
+}
+window.delEmp=delEmp;
+
+// 去向（按月，可編輯名稱）
+function rLocList(md){
+  document.getElementById('loc-list').innerHTML=md.locTypes.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span class="chip" style="background:${l.bg};color:${l.fg};min-width:76px">
+        <span class="dot" style="background:${l.dot}"></span>
+        <input type="text" value="${l.name}" onblur="renLoc(${i},this.value.trim())"
+          style="border:none;background:transparent;color:${l.fg};font-size:11px;font-weight:500;width:62px;padding:0;font-family:inherit">
+      </span>
+      <span style="font-size:11px;color:#888;flex-shrink:0">換色</span>
+      ${PAL.map((p,pi)=>`<span class="sw ${l.dot===p.dot?'sel':''}" style="background:${p.dot}" onclick="recolorLoc(${i},${pi})"></span>`).join('')}
+      ${md.locTypes.length>1?`<button class="btn btn-sm" style="margin-left:auto" onclick="delLoc(${i})"><i class="ti ti-trash"></i></button>`:''}
+    </div>`).join('');
+}
+function renLoc(i,n){
+  if(!n)return;const md=getMD(cfgKey);const old=md.locTypes[i].name;if(n===old)return;
+  md.locTypes[i].name=n;
+  Object.values(md.locations).forEach(d=>Object.keys(d).forEach(e=>{if(d[e]===old)d[e]=n;}));
+  md.punches.forEach(p=>{if(p.loc===old)p.loc=n;});
+  rLocList(md);save();
+}
+window.renLoc=renLoc;
+function recolorLoc(i,pi){const md=getMD(cfgKey);const p=PAL[pi];md.locTypes[i]={...md.locTypes[i],...p};rLocList(md);rCal();save();}
+window.recolorLoc=recolorLoc;
+function delLoc(i){const md=getMD(cfgKey);if(!confirm(`確定刪除「${md.locTypes[i].name}」？`))return;md.locTypes.splice(i,1);rLocList(md);save();}
+window.delLoc=delLoc;
+function rLocPal(){
+  document.getElementById('loc-pal').innerHTML=PAL.map((p,pi)=>
+    `<span class="sw ${pi===palIdx?'sel':''}" style="background:${p.dot}" onclick="setPalIdx(${pi})"></span>`
+  ).join('');
+}
+window.rLocPal=rLocPal;
+function setPalIdx(i){palIdx=i;rLocPal();}
+window.setPalIdx=setPalIdx;
+function addLoc(){
+  const n=document.getElementById('new-loc').value.trim();if(!n)return;
+  const md=getMD(cfgKey);if(md.locTypes.find(l=>l.name===n)){alert('已存在');return;}
+  const p=PAL[palIdx];md.locTypes.push({name:n,bg:p.bg,fg:p.fg,dot:p.dot});
+  document.getElementById('new-loc').value='';rLocList(md);save();
+}
+window.addLoc=addLoc;
+
+// 支出類別（全域）
+function rCatList(){
+  document.getElementById('cat-list').innerHTML=G.expCats.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="badge bg-gray" style="min-width:55px;text-align:center">${c}</span>
+      <input type="text" value="${c}" style="width:130px" onblur="renCat(${i},this.value.trim())">
+      ${G.expCats.length>1?`<button class="btn btn-sm" onclick="delCat(${i})"><i class="ti ti-trash"></i></button>`:''}
+    </div>`).join('');
+}
+function renCat(i,n){if(!n||n===G.expCats[i])return;const o=G.expCats[i];G.expCats[i]=n;EX.forEach(e=>{if(e.cat===o)e.cat=n;});rCatList();save();}
+window.renCat=renCat;
+function delCat(i){if(!confirm(`確定刪除「${G.expCats[i]}」？`))return;G.expCats.splice(i,1);rCatList();save();}
+window.delCat=delCat;
+function addCat(){const n=document.getElementById('new-cat').value.trim();if(!n)return;if(G.expCats.includes(n)){alert('已存在');return;}G.expCats.push(n);document.getElementById('new-cat').value='';rCatList();save();}
+window.addCat=addCat;
+
+// ── 打卡單 AI 辨識 ──
+let ocrImages = {front: null, back: null}; // 存 base64
+
+function previewOcr(side, event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const base64=e.target.result.split(',')[1];
+    ocrImages[side]=base64;
+    // 更新預覽區塊
+    const area=document.getElementById(side+'-area');
+    area.innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:6px;object-fit:contain">
+      <div style="font-size:10px;color:#1D9E75;margin-top:4px">✔ 已上傳</div>`;
+    // 至少有一張就顯示辨識按鈕
+    if(ocrImages.front||ocrImages.back){
+      document.getElementById('ocr-run-btn').style.display='flex';
+    }
+  };
+  reader.readAsDataURL(file);
+  event.target.value='';
+}
+window.previewOcr=previewOcr;
+
+async function runOcr(){
+  const VISION_KEY='AIzaSyBMXrq3sCJvuyLN7a8ZMjHYNii5t4FBS5Q';
+  const status=document.getElementById('ocr-status');
+  const results=document.getElementById('ocr-results');
+  status.style.display='block';
+  results.style.display='none';
+  results.innerHTML='';
+  status.innerHTML='<span style="color:#185FA5"><i class="ti ti-loader"></i> AI 辨識中，請稍候…</span>';
+  document.getElementById('ocr-run-btn').disabled=true;
+  const allRecords=[];
+
+  try{
+    const sides=[];
+    if(ocrImages.front) sides.push({label:'正面',data:ocrImages.front});
+    if(ocrImages.back)  sides.push({label:'背面',data:ocrImages.back});
+
+    for(const side of sides){
+      status.innerHTML=`<span style="color:#185FA5"><i class="ti ti-loader"></i> 辨識${side.label}中…</span>`;
+      const resp=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          requests:[{
+            image:{content:side.data},
+            features:[{type:'TEXT_DETECTION',maxResults:1}]
+          }]
+        })
+      });
+      const data=await resp.json();
+      if(data.error) throw new Error(data.error.message);
+      const text=data.responses?.[0]?.fullTextAnnotation?.text||'';
+      if(!text) continue;
+      const parsed=parsePunchText(text);
+      allRecords.push(...parsed);
+    }
+
+    // 合併正反面，同一天取最完整的
+    const merged={};
+    allRecords.forEach(r=>{
+      if(!r.day) return;
+      if(!merged[r.day]) merged[r.day]=r;
+      else{
+        if(!merged[r.day].in&&r.in) merged[r.day].in=r.in;
+        if(!merged[r.day].out&&r.out) merged[r.day].out=r.out;
+      }
+    });
+    const records=Object.values(merged).sort((a,b)=>a.day-b.day);
+
+    if(!records.length){
+      status.innerHTML='<span style="color:#A32D2D">找不到打卡紀錄，請確認圖片清晰。</span>';
+      document.getElementById('ocr-run-btn').disabled=false;
+      return;
+    }
+    showOcrResults({
+      year:calY, month:calM,
+      records:records.map(r=>({
+        day:r.day,
+        date:`${calY}-${pad(calM)}-${pad(r.day)}`,
+        in:r.in||null,
+        out:r.out||null
+      }))
+    });
+  }catch(err){
+    status.innerHTML=`<span style="color:#A32D2D"><i class="ti ti-alert-triangle"></i> 辨識失敗：${err.message||'請再試一次'}</span>`;
+    console.error('OCR error:',err);
+  }
+  document.getElementById('ocr-run-btn').disabled=false;
+}
+window.runOcr=runOcr;
+
+function parsePunchText(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+  const records=[];
+  const timeRe=/\b([01]?\d|2[0-3])[:：]([0-5]\d)\b/g;
+  const dayRe=/^(\d{1,2})\b/;
+  lines.forEach(line=>{
+    const dayM=line.match(dayRe);
+    if(!dayM) return;
+    const day=parseInt(dayM[1]);
+    if(day<1||day>31) return;
+    const times=[];
+    let m;
+    const re=new RegExp(timeRe.source,'g');
+    while((m=re.exec(line))!==null){
+      times.push(`${m[1].padStart(2,'0')}:${m[2]}`);
+    }
+    if(!times.length) return;
+    times.sort();
+    records.push({day, in:times[0], out:times.length>1?times[times.length-1]:null});
+  });
+  return records;
+}
+
+function showOcrResults(parsed){
+  const status=document.getElementById('ocr-status');
+  const results=document.getElementById('ocr-results');
+  // 補上年月：優先用辨識到的，否則用目前月曆的年月
+  const year=parsed.year||calY;
+  const month=parsed.month||calM;
+  const records=(parsed.records||[]).map(r=>{
+    // 如果只有 day 沒有完整 date，自動補
+    if(!r.date&&r.day){
+      r.date=`${year}-${pad(month)}-${pad(r.day)}`;
+    }
+    return r;
+  }).filter(r=>r.date).sort((a,b)=>a.date.localeCompare(b.date));
+
+  if(!records.length){
+    status.innerHTML='<span style="color:#A32D2D">找不到打卡紀錄，請確認圖片清晰。</span>';
+    return;
+  }
+  status.innerHTML=`<span style="color:#1D9E75"><i class="ti ti-check"></i> 辨識完成，找到 ${records.length} 筆紀錄（${year}年${month}月）</span>`;
+  const key=calKey();
+  let html=`<div style="font-size:12px;color:#888;margin-bottom:8px">請確認辨識結果，可修正後匯入：</div>
+  <table style="font-size:13px;width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="padding:6px 8px;border-bottom:0.5px solid #e0ddd5"><input type="checkbox" id="ocr-check-all" onchange="ocrToggleAll(this.checked)" style="width:auto" checked></th>
+      <th style="padding:6px 8px;border-bottom:0.5px solid #e0ddd5;text-align:left">日期</th>
+      <th style="padding:6px 8px;border-bottom:0.5px solid #e0ddd5;text-align:left">上班</th>
+      <th style="padding:6px 8px;border-bottom:0.5px solid #e0ddd5;text-align:left">下班</th>
+      <th style="padding:6px 8px;border-bottom:0.5px solid #e0ddd5;text-align:left">去向</th>
+    </tr></thead><tbody>`;
+  const dowNames=['日','一','二','三','四','五','六'];
+  records.forEach((r,i)=>{
+    const dow=r.date?dowNames[new Date(r.date).getDay()]:'?';
+    const isSun=r.date&&new Date(r.date).getDay()===0;
+    html+=`<tr>
+      <td style="padding:5px 8px;border-bottom:0.5px solid #f0ede8"><input type="checkbox" class="ocr-row-check" checked style="width:auto"></td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid #f0ede8">
+        <input type="date" value="${r.date||''}" class="ocr-date" style="font-size:12px;padding:3px 5px;width:130px">
+        <span style="font-size:10px;padding:1px 4px;border-radius:3px;${isSun?'background:#FCEBEB;color:#A32D2D':'color:#888'}">${dow}</span>
+      </td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid #f0ede8"><input type="time" value="${r.in||''}" class="ocr-in" style="font-size:12px;padding:3px 5px;width:90px"></td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid #f0ede8"><input type="time" value="${r.out||''}" class="ocr-out" style="font-size:12px;padding:3px 5px;width:90px"></td>
+      <td style="padding:5px 8px;border-bottom:0.5px solid #f0ede8"><select class="ocr-loc" style="font-size:12px;padding:3px 5px">${locOpts(key)}</select></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn btn-p" onclick="importOcrRecords()"><i class="ti ti-file-import"></i> 匯入選取紀錄</button>
+    <button class="btn" onclick="clearOcr()"><i class="ti ti-x"></i> 清除</button>
+  </div>`;
+  results.innerHTML=html;
+  results.style.display='block';
+  results._records=records;
+}
+
+function ocrToggleAll(checked){
+  document.querySelectorAll('.ocr-row-check').forEach(cb=>cb.checked=checked);
+}
+window.ocrToggleAll=ocrToggleAll;
+
+function importOcrRecords(){
+  const checks=document.querySelectorAll('.ocr-row-check');
+  const dates=document.querySelectorAll('.ocr-date');
+  const ins=document.querySelectorAll('.ocr-in');
+  const outs=document.querySelectorAll('.ocr-out');
+  const locs=document.querySelectorAll('.ocr-loc');
+  let imported=0;
+  checks.forEach((cb,i)=>{
+    if(!cb.checked)return;
+    const dateVal=dates[i]?.value;
+    const inVal=ins[i]?.value;
+    const outVal=outs[i]?.value;
+    const locVal=locs[i]?.value;
+    if(!dateVal)return;
+    const pkey=dateVal.slice(0,7);
+    const pmd=getMD(pkey);
+    const exists=pmd.punches.find(p=>p.date===dateVal&&p.name===actEmp);
+    if(exists){
+      if(inVal)exists.in=inVal;
+      if(outVal)exists.out=outVal;
+      if(locVal)exists.loc=locVal;
+    } else {
+      pmd.punches.push({date:dateVal,name:actEmp,in:inVal||'',out:outVal||'',loc:locVal||''});
+    }
+    if(locVal){
+      if(!pmd.locations[dateVal])pmd.locations[dateVal]={};
+      pmd.locations[dateVal][actEmp]=locVal;
+    }
+    imported++;
+  });
+  clearOcr();
+  rSalary();
+  save();
+  alert(`已匯入 ${imported} 筆打卡紀錄！`);
+}
+window.importOcrRecords=importOcrRecords;
+
+function clearOcr(){
+  ocrImages={front:null,back:null};
+  ['front','back'].forEach(side=>{
+    const area=document.getElementById(side+'-area');
+    if(area) area.innerHTML=`<i class="ti ti-photo" style="font-size:20px;color:#bbb"></i><div style="font-size:11px;color:#bbb;margin-top:4px">點擊上傳</div>`;
+    const input=document.getElementById('ocr-'+side);
+    if(input) input.value='';
+  });
+  const btn=document.getElementById('ocr-run-btn');
+  if(btn) btn.style.display='none';
+  const status=document.getElementById('ocr-status');
+  if(status){status.style.display='none';status.innerHTML='';}
+  const results=document.getElementById('ocr-results');
+  if(results){results.style.display='none';results.innerHTML='';}
+}
+window.clearOcr=clearOcr;
+
+// ── modal ──
+function openModal(title,body,sc){
+  const bg=document.createElement('div');bg.className='mbg';bg.id='mbg';
+  bg.onclick=e=>{if(e.target===bg)closeModal();};
+  bg.innerHTML=`<div class="mbox"><div style="font-size:15px;font-weight:500;margin-bottom:1rem">${title}</div>${body}
+    <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">取消</button>
+      ${sc?`<button class="btn btn-p" onclick="${sc}">儲存</button>`:''}
+    </div></div>`;
+  document.body.appendChild(bg);
+}
+function closeModal(){const m=document.getElementById('mbg');if(m)m.remove();}
+window.openModal=openModal;window.closeModal=closeModal;
+
+// ── 初始化預設資料 ──
+MD['2026-04']={
+  employees:JSON.parse(JSON.stringify(DEF_EMP)),
+  locTypes:JSON.parse(JSON.stringify(DEF_LOC)),
+  locations:{'2026-04-01':{王小明:'公司',李小華:'公司',陳大文:'工地',林美美:'休息'}},
+  punches:[
+    {date:'2026-04-01',name:'王小明',in:'08:50',out:'18:30',loc:'公司'},
+    {date:'2026-04-01',name:'李小華',in:'09:10',out:'17:45',loc:'公司'},
+    {date:'2026-04-01',name:'陳大文',in:'08:45',out:'19:00',loc:'工地'},
+    {date:'2026-04-02',name:'王小明',in:'09:20',out:'18:00',loc:'公司'},
+    {date:'2026-04-02',name:'陳大文',in:'08:30',out:'17:30',loc:'工地'},
+  ]
+};
+
+// 先 render，再接 Firebase
+rCal();iSumSel();rSummary();
+showS('syn','<i class="ti ti-refresh"></i> 連線中…');
+
+onSnapshot(REF, snap=>{
+  if(snap.exists()){
+    const d=snap.data();
+    if(d.G) Object.assign(G,d.G);
+    if(d.MD) Object.keys(d.MD).forEach(k=>{MD[k]=d.MD[k];});
+    if(d.EX) EX.splice(0,EX.length,...d.EX);
+    setOL(true);showS('ok','<i class="ti ti-check"></i> 已同步');
+    refCur();
+  } else {
+    setDoc(REF,{G,MD,EX});
+    setOL(true);showS('ok','<i class="ti ti-check"></i> 初始化完成');
+  }
+},()=>{setOL(false);showS('err','<i class="ti ti-wifi-off"></i> 離線模式');});
+</script>
+</body>
+</html>
