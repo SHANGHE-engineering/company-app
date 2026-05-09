@@ -293,7 +293,10 @@ let EX = [
   {date:'2026-04-03',cat:'油錢',desc:'台中來回',amount:1200,payer:'張志強'},
   {date:'2026-04-05',cat:'工具',desc:'電鑽購入',amount:3800,payer:'王小明'},
 ];
-let calY=2026, calM=4, salY=2026, salM=4, actEmp=null, cfgKey='2026-04';
+const _now=new Date();
+const _prevM=_now.getMonth()===0?12:_now.getMonth();
+const _prevY=_now.getMonth()===0?_now.getFullYear()-1:_now.getFullYear();
+let calY=_prevY, calM=_prevM, salY=_prevY, salM=_prevM, actEmp=null, cfgKey=`${_prevY}-${String(_prevM).padStart(2,'0')}`;
 
 function pad(n){return String(n).padStart(2,'0');}
 function ds(y,m,d){return `${y}-${pad(m)}-${pad(d)}`;}
