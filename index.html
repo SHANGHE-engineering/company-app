@@ -79,6 +79,7 @@ input:focus,select:focus { outline: none; border-color: #888; }
     <button class="tab" onclick="T('calendar')"><i class="ti ti-calendar"></i> 月曆去向</button>
     <button class="tab" onclick="T('salary')"><i class="ti ti-cash"></i> 薪資</button>
     <button class="tab" onclick="T('expense')"><i class="ti ti-receipt"></i> 支出</button>
+    <button class="tab" onclick="T('income')"><i class="ti ti-coin"></i> 收入</button>
     <button class="tab" onclick="T('settings')"><i class="ti ti-settings"></i> 設定</button>
   </div>
 
@@ -180,6 +181,44 @@ input:focus,select:focus { outline: none; border-color: #888; }
     </div>
   </div>
 
+  <div id="s-income" class="sec">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+      <button class="btn" onclick="chIncMo(-1)"><i class="ti ti-chevron-left"></i></button>
+      <span style="font-size:15px;font-weight:500" id="inc-title"></span>
+      <button class="btn" onclick="chIncMo(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="btn btn-p" style="margin-left:auto" onclick="openAddInc()"><i class="ti ti-plus"></i> 新增收入</button>
+    </div>
+    <div class="mg" id="inc-metrics"></div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="stitle">收支結構</div>
+      <div id="inc-profit-bar" style="display:flex;height:18px;border-radius:9px;overflow:hidden;gap:2px;margin-bottom:8px"></div>
+      <div id="inc-profit-label" style="display:flex;gap:16px;font-size:12px;color:#888"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="card" style="margin:0">
+        <div class="stitle">本月收入明細</div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>日期</th><th>類別</th><th>專案/客戶</th><th>金額</th><th>備註</th><th></th></tr></thead>
+          <tbody id="inc-body"></tbody>
+        </table></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="stitle">按專案/客戶</div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>專案/客戶</th><th>金額</th></tr></thead>
+          <tbody id="inc-proj-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stitle">收入類別分布</div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>類別</th><th>金額</th><th>佔比</th></tr></thead>
+        <tbody id="inc-cat-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+
   <div id="s-settings" class="sec">
     <div class="card">
       <div class="stitle">全域設定 <span style="font-size:12px;font-weight:400;color:#888">（所有月份共用）</span></div>
@@ -234,6 +273,23 @@ input:focus,select:focus { outline: none; border-color: #888; }
         <button class="btn btn-p" onclick="addCat()"><i class="ti ti-plus"></i> 新增</button>
       </div>
     </div>
+    <div class="card">
+      <div class="stitle">收入類別 <span style="font-size:12px;font-weight:400;color:#888">（所有月份共用）</span></div>
+      <div id="inc-cat-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="new-inc-cat" placeholder="新收入類別" style="width:150px">
+        <button class="btn btn-p" onclick="addIncCat()"><i class="ti ti-plus"></i> 新增</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stitle">專案/客戶管理</div>
+      <div id="proj-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="new-proj-name" placeholder="專案/客戶名稱" style="width:150px">
+        <input type="text" id="new-proj-contact" placeholder="聯絡人（選填）" style="width:120px">
+        <button class="btn btn-p" onclick="addProj()"><i class="ti ti-plus"></i> 新增</button>
+      </div>
+    </div>
   </div>
 </div>
 <div id="modal-root"></div>
@@ -285,7 +341,7 @@ const DEF_EMP = [
 // monthData[YYYY-MM]: { employees, locTypes, locations, punches }
 // expenses: [{date,cat,desc,amount,payer}]
 
-let G = { hours:8, breakMin:60, startTime:'09:00', lateFine:300, grace:5, expCats:['材料','吃飯','油錢','停車','工具','雜支','其他'] };
+let G = { hours:8, breakMin:60, startTime:'09:00', lateFine:300, grace:5, expCats:['材料','吃飯','油錢','停車','工具','雜支','其他'], incCats:['工程款','材料款','設計費','驗收款','其他'], projects:[] };
 let MD = {}; // monthData
 let EX = [
   {date:'2026-04-01',cat:'材料',desc:'鋼筋採購',amount:12500,payer:'陳大文'},
@@ -293,10 +349,11 @@ let EX = [
   {date:'2026-04-03',cat:'油錢',desc:'台中來回',amount:1200,payer:'張志強'},
   {date:'2026-04-05',cat:'工具',desc:'電鑽購入',amount:3800,payer:'王小明'},
 ];
+let IN = []; // 收入記錄 [{date,cat,project,amount,note}]
 const _now=new Date();
 const _prevM=_now.getMonth()===0?12:_now.getMonth();
 const _prevY=_now.getMonth()===0?_now.getFullYear()-1:_now.getFullYear();
-let calY=_prevY, calM=_prevM, salY=_prevY, salM=_prevM, actEmp=null, cfgKey=`${_prevY}-${String(_prevM).padStart(2,'0')}`;
+let calY=_prevY, calM=_prevM, salY=_prevY, salM=_prevM, incY=_prevY, incM=_prevM, actEmp=null, cfgKey=`${_prevY}-${String(_prevM).padStart(2,'0')}`;
 
 function pad(n){return String(n).padStart(2,'0');}
 function ds(y,m,d){return `${y}-${pad(m)}-${pad(d)}`;}
@@ -345,13 +402,13 @@ function setOL(v){const d=document.getElementById('cdot');d.className='cdot '+(v
 let stimer=null;
 function save(){clearTimeout(stimer);stimer=setTimeout(async()=>{
   showS('syn','<i class="ti ti-cloud-upload"></i> 同步中…');
-  try{await setDoc(REF,{G,MD,EX});setOL(true);showS('ok','<i class="ti ti-check"></i> 已同步');}
+  try{await setDoc(REF,{G,MD,EX,IN});setOL(true);showS('ok','<i class="ti ti-check"></i> 已同步');}
   catch(e){setOL(false);showS('err','<i class="ti ti-alert-triangle"></i> 同步失敗');}
 },800);}
 
 // ── tab ──
 function T(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['summary','calendar','salary','expense','settings'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['summary','calendar','salary','expense','income','settings'][i]===t));
   document.querySelectorAll('.sec').forEach(el=>el.classList.remove('active'));
   document.getElementById('s-'+t).classList.add('active');
   if(t==='summary'){iSumSel();rSummary();}
@@ -361,7 +418,7 @@ function T(t){
   if(t==='settings') rSettings();
 }
 window.T=T;
-function refCur(){const i=[...document.querySelectorAll('.tab')].findIndex(t=>t.classList.contains('active'));T(['summary','calendar','salary','expense','settings'][i]);}
+function refCur(){const i=[...document.querySelectorAll('.tab')].findIndex(t=>t.classList.contains('active'));T(['summary','calendar','salary','expense','income','settings'][i]);}
 
 // ── 月結總覽 ──
 function iSumSel(){
@@ -387,10 +444,10 @@ function rSummary(){
     <span style="font-size:26px;font-weight:500;color:#A32D2D">$${totalCost.toLocaleString()}</span>
   </div>
   <div class="mg" style="margin-bottom:1.5rem">
-    <div class="mt"><div class="mt-l">薪資合計</div><div class="mt-v green">$${totalSal.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">本月收入</div><div class="mt-v green">$${mIncTotal.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">薪資合計</div><div class="mt-v red">$${totalSal.toLocaleString()}</div></div>
     <div class="mt"><div class="mt-l">支出合計</div><div class="mt-v amber">$${totalExp.toLocaleString()}</div></div>
-    <div class="mt"><div class="mt-l">出勤人數</div><div class="mt-v blue">${att.length} 人</div></div>
-    <div class="mt"><div class="mt-l">支出筆數</div><div class="mt-v">${mEx.length} 筆</div></div>
+    <div class="mt"><div class="mt-l">本月利潤</div><div class="mt-v blue" style="color:${mIncTotal-totalSal-totalExp>=0?'#1D9E75':'#A32D2D'}">$${(mIncTotal-totalSal-totalExp).toLocaleString()}</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
   <div class="card" style="margin:0"><div class="stitle">員工薪資 + 代墊</div>
@@ -908,7 +965,7 @@ function rSettings(){
   const sel=document.getElementById('cfg-sel');const keys=allKeys();
   if(!keys.includes(cfgKey)) cfgKey=keys[0]||`${calY}-${pad(calM)}`;
   sel.innerHTML=keys.map(k=>`<option value="${k}" ${k===cfgKey?'selected':''}>${k}</option>`).join('');
-  rMthSettings();rCatList();rLocPal();
+  rMthSettings();rCatList();rLocPal();rIncCatList();rProjList();
 }
 function saveGlobal(){
   G.hours=+document.getElementById('g-hours').value;G.breakMin=+document.getElementById('g-break').value;
@@ -1059,6 +1116,191 @@ function delCat(i){if(!confirm(`確定刪除「${G.expCats[i]}」？`))return;G.
 window.delCat=delCat;
 function addCat(){const n=document.getElementById('new-cat').value.trim();if(!n)return;if(G.expCats.includes(n)){alert('已存在');return;}G.expCats.push(n);document.getElementById('new-cat').value='';rCatList();save();}
 window.addCat=addCat;
+
+// ── 收入 ──
+function incKey(){return `${incY}-${pad(incM)}`;}
+function chIncMo(d){incM+=d;if(incM>12){incM=1;incY++;}if(incM<1){incM=12;incY--;}rIncome();}
+window.chIncMo=chIncMo;
+
+function rIncome(){
+  const mns=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const titleEl=document.getElementById('inc-title');
+  if(titleEl) titleEl.textContent=`${incY}年 ${mns[incM-1]}`;
+  const key=incKey();
+  const mInc=IN.filter(r=>r.date&&r.date.startsWith(key)).sort((a,b)=>a.date.localeCompare(b.date));
+  const totalInc=mInc.reduce((s,r)=>s+r.amount,0);
+
+  // 取得當月支出
+  const mEx=EX.filter(e=>e.date&&e.date.startsWith(key));
+  const totalExp=mEx.reduce((s,e)=>s+e.amount,0);
+  // 取得薪資
+  const md=getMD(key);
+  const ed=calcED(key);
+  let totalSal=0;md.employees.forEach(e=>{totalSal+=(ed[e.name]||{net:0}).net;});
+  const totalCost=totalExp+totalSal;
+  const profit=totalInc-totalCost;
+  const profitRate=totalInc>0?Math.round(profit/totalInc*100):0;
+
+  // 指標
+  document.getElementById('inc-metrics').innerHTML=`
+    <div class="mt"><div class="mt-l">本月收入</div><div class="mt-v green">$${totalInc.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">本月總支出</div><div class="mt-v red">$${totalCost.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">本月利潤</div><div class="mt-v" style="color:${profit>=0?'#1D9E75':'#A32D2D'}">$${profit.toLocaleString()}</div></div>
+    <div class="mt"><div class="mt-l">利潤率</div><div class="mt-v" style="color:${profitRate>=0?'#BA7517':'#A32D2D'}">${profitRate}%</div></div>`;
+
+  // 收支條
+  const bar=document.getElementById('inc-profit-bar');
+  const label=document.getElementById('inc-profit-label');
+  if(totalInc+totalCost>0){
+    const ip=totalInc>0?Math.round(totalInc/(totalInc+totalCost)*100):0;
+    bar.innerHTML=`
+      <div style="width:${ip}%;background:#1D9E75;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${ip>8?ip+'%':''}</div>
+      <div style="width:${100-ip}%;background:#E24B4A;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${100-ip>8?(100-ip)+'%':''}</div>`;
+    label.innerHTML=`<span>● 收入 $${totalInc.toLocaleString()}</span><span>● 支出 $${totalCost.toLocaleString()}</span><span style="font-weight:500;color:#1a1a1a">淨利 $${profit.toLocaleString()}</span>`;
+  } else {
+    bar.innerHTML='<div style="width:100%;background:#f0ede8;border-radius:9px;height:18px"></div>';
+    label.innerHTML='<span style="color:#bbb">本月尚無收入資料</span>';
+  }
+
+  // 收入明細
+  document.getElementById('inc-body').innerHTML=!mInc.length
+    ?`<tr><td colspan="6" style="text-align:center;color:#888;padding:1.5rem">本月無收入記錄</td></tr>`
+    :mInc.map((r,i)=>`<tr>
+      <td>${r.date.slice(5)}</td>
+      <td><span class="badge bg-gray">${r.cat}</span></td>
+      <td style="font-weight:500">${r.project||'—'}</td>
+      <td style="font-weight:500;color:#1D9E75">$${r.amount.toLocaleString()}</td>
+      <td style="color:#888;font-size:12px">${r.note||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" style="margin-right:4px" onclick="editInc(${IN.indexOf(r)})"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm" onclick="delInc(${IN.indexOf(r)})"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+
+  // 按專案
+  const byProj={};
+  mInc.forEach(r=>{const k=r.project||'未分類';byProj[k]=(byProj[k]||0)+r.amount;});
+  const projEntries=Object.entries(byProj).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('inc-proj-body').innerHTML=!projEntries.length
+    ?`<tr><td colspan="2" style="text-align:center;color:#888;padding:1.5rem">無資料</td></tr>`
+    :projEntries.map(([p,v])=>{
+      const pct=totalInc>0?Math.round(v/totalInc*100):0;
+      return `<tr><td style="font-weight:500">${p}</td>
+        <td><div style="color:#1D9E75;font-weight:500">$${v.toLocaleString()}</div>
+        <div style="background:#f0ede8;border-radius:4px;height:6px;overflow:hidden;margin-top:3px"><div style="height:6px;border-radius:4px;width:${pct}%;background:#1D9E75"></div></div></td></tr>`;
+    }).join('')+`<tr style="border-top:0.5px solid #ccc"><td style="font-weight:500;padding-top:10px">合計</td><td style="font-weight:500;color:#1D9E75;padding-top:10px">$${totalInc.toLocaleString()}</td></tr>`;
+
+  // 類別分布
+  const byCat={};
+  mInc.forEach(r=>{byCat[r.cat]=(byCat[r.cat]||0)+r.amount;});
+  const catEntries=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('inc-cat-body').innerHTML=!catEntries.length
+    ?`<tr><td colspan="3" style="text-align:center;color:#888;padding:1.5rem">無資料</td></tr>`
+    :catEntries.map(([c,v])=>{
+      const pct=totalInc>0?Math.round(v/totalInc*100):0;
+      return `<tr><td><span class="badge bg-gray">${c}</span></td>
+        <td style="font-weight:500;color:#1D9E75">$${v.toLocaleString()}</td>
+        <td style="width:40%"><div style="font-size:11px;color:#888">${pct}%</div>
+        <div style="background:#f0ede8;border-radius:4px;height:6px;overflow:hidden;margin-top:3px"><div style="height:6px;border-radius:4px;width:${pct}%;background:#185FA5"></div></div></td></tr>`;
+    }).join('');
+}
+function openAddInc(){
+  const projOpts=G.projects.map(p=>`<option value="${p.name}">${p.name}${p.contact?' ('+p.contact+')':''}</option>`).join('');
+  const catOpts2=G.incCats.map(c=>`<option>${c}</option>`).join('');
+  openModal('新增收入',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="in-date" value="${new Date().toISOString().slice(0,10)}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">類別</div>
+      <select id="in-cat">${catOpts2}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">專案/客戶</div>
+      <select id="in-proj"><option value="">— 選擇或輸入 —</option>${projOpts}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">自訂專案名稱（覆蓋上方選單）</div>
+      <input type="text" id="in-proj-custom" placeholder="留空則用選單值"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
+      <input type="number" id="in-amount" placeholder="0"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">備註</div>
+      <input type="text" id="in-note" placeholder="選填"></div>`,'saveInc()');
+}
+window.openAddInc=openAddInc;
+function saveInc(){
+  const proj=document.getElementById('in-proj-custom').value.trim()||document.getElementById('in-proj').value;
+  const r={date:document.getElementById('in-date').value,cat:document.getElementById('in-cat').value,
+    project:proj,amount:Number(document.getElementById('in-amount').value),
+    note:document.getElementById('in-note').value};
+  if(r.date&&r.amount){IN.push(r);}
+  closeModal();rIncome();save();
+}
+window.saveInc=saveInc;
+function editInc(i){
+  const r=IN[i];if(!r)return;
+  const projOpts=G.projects.map(p=>`<option value="${p.name}" ${r.project===p.name?'selected':''}>${p.name}${p.contact?' ('+p.contact+')':''}</option>`).join('');
+  const catOpts2=G.incCats.map(c=>`<option ${r.cat===c?'selected':''}>${c}</option>`).join('');
+  openModal('編輯收入',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="in-date" value="${r.date}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">類別</div>
+      <select id="in-cat">${catOpts2}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">專案/客戶</div>
+      <select id="in-proj"><option value="">— 選擇 —</option>${projOpts}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">自訂專案名稱</div>
+      <input type="text" id="in-proj-custom" value="${r.project||''}"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
+      <input type="number" id="in-amount" value="${r.amount}"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">備註</div>
+      <input type="text" id="in-note" value="${r.note||''}"></div>`,`saveEditInc(${i})`);
+}
+window.editInc=editInc;
+function saveEditInc(i){
+  const proj=document.getElementById('in-proj-custom').value.trim()||document.getElementById('in-proj').value;
+  IN[i]={date:document.getElementById('in-date').value,cat:document.getElementById('in-cat').value,
+    project:proj,amount:Number(document.getElementById('in-amount').value),
+    note:document.getElementById('in-note').value};
+  closeModal();rIncome();save();
+}
+window.saveEditInc=saveEditInc;
+function delInc(i){if(confirm('確定刪除這筆收入？')){IN.splice(i,1);rIncome();save();}}
+window.delInc=delInc;
+
+// 收入類別管理（設定頁）
+function rIncCatList(){
+  const el=document.getElementById('inc-cat-list');if(!el)return;
+  el.innerHTML=G.incCats.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="badge bg-gray" style="min-width:55px;text-align:center">${c}</span>
+      <input type="text" value="${c}" style="width:130px" onblur="renIncCat(${i},this.value.trim())">
+      ${G.incCats.length>1?`<button class="btn btn-sm" onclick="delIncCat(${i})"><i class="ti ti-trash"></i></button>`:''}
+    </div>`).join('');
+}
+function renIncCat(i,n){if(!n||n===G.incCats[i])return;const o=G.incCats[i];G.incCats[i]=n;IN.forEach(r=>{if(r.cat===o)r.cat=n;});rIncCatList();save();}
+window.renIncCat=renIncCat;
+function delIncCat(i){if(!confirm(`確定刪除「${G.incCats[i]}」？`))return;G.incCats.splice(i,1);rIncCatList();save();}
+window.delIncCat=delIncCat;
+function addIncCat(){const n=document.getElementById('new-inc-cat').value.trim();if(!n)return;if(G.incCats.includes(n)){alert('已存在');return;}G.incCats.push(n);document.getElementById('new-inc-cat').value='';rIncCatList();save();}
+window.addIncCat=addIncCat;
+
+// 專案管理（設定頁）
+function rProjList(){
+  const el=document.getElementById('proj-list');if(!el)return;
+  el.innerHTML=G.projects.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input type="text" value="${p.name}" style="width:130px" placeholder="專案名稱" onblur="renProj(${i},'name',this.value.trim())">
+      <input type="text" value="${p.contact||''}" style="width:110px" placeholder="聯絡人" onblur="renProj(${i},'contact',this.value.trim())">
+      <button class="btn btn-sm" onclick="delProj(${i})"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+function renProj(i,field,v){G.projects[i][field]=v;save();}
+window.renProj=renProj;
+function delProj(i){if(!confirm(`確定刪除「${G.projects[i].name}」？`))return;G.projects.splice(i,1);rProjList();save();}
+window.delProj=delProj;
+function addProj(){
+  const n=document.getElementById('new-proj-name').value.trim();
+  const c=document.getElementById('new-proj-contact').value.trim();
+  if(!n)return;
+  G.projects.push({name:n,contact:c});
+  document.getElementById('new-proj-name').value='';
+  document.getElementById('new-proj-contact').value='';
+  rProjList();save();
+}
+window.addProj=addProj;
 
 // ── 打卡單 AI 辨識 ──
 let ocrImages = {front: null, back: null}; // 存 base64
@@ -1328,10 +1570,11 @@ onSnapshot(REF, snap=>{
     if(d.G) Object.assign(G,d.G);
     if(d.MD) Object.keys(d.MD).forEach(k=>{MD[k]=d.MD[k];});
     if(d.EX) EX.splice(0,EX.length,...d.EX);
+    if(d.IN) IN.splice(0,IN.length,...d.IN);
     setOL(true);showS('ok','<i class="ti ti-check"></i> 已同步');
     refCur();
   } else {
-    setDoc(REF,{G,MD,EX});
+    setDoc(REF,{G,MD,EX,IN});
     setOL(true);showS('ok','<i class="ti ti-check"></i> 初始化完成');
   }
 },()=>{setOL(false);showS('err','<i class="ti ti-wifi-off"></i> 離線模式');});
