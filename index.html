@@ -432,7 +432,9 @@ function rSummary(){
   const [,mo]=m.split('-').map(Number);
   const md=getMD(m);const ed=calcED(m);
   let totalSal=0;md.employees.forEach(e=>{totalSal+=(ed[e.name]||{net:0}).net;});
-  const mEx=EX.filter(e=>e.date.startsWith(m));
+  const mEx=EX.filter(e=>e.date&&e.date.startsWith(m));
+  const mIncRecs=(typeof IN!=='undefined'?IN:[]).filter(r=>r.date&&r.date.startsWith(m));
+  const mIncTotal=mIncRecs.reduce((s,r)=>s+r.amount,0);
   const byCat={};mEx.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
   const totalExp=Object.values(byCat).reduce((a,b)=>a+b,0);
   const totalCost=totalSal+totalExp;
