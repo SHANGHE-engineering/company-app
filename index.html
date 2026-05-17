@@ -935,7 +935,7 @@ function rExpense(){
   const titleEl=document.getElementById('exp-title');
   if(titleEl) titleEl.textContent=`${expY}年 ${mns[expM-1]}`;
   const key=`${expY}-${pad(expM)}`;
-  const mEx=EX.filter(e=>e.date&&e.date.startsWith(key));
+  const mEx=EX.filter(e=>e.date&&e.date.startsWith(key)).sort((a,b)=>a.date.localeCompare(b.date));
   const byCat={};G.expCats.forEach(c=>byCat[c]=0);let total=0;
   mEx.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;total+=e.amount;});
   const top=Object.entries(byCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
@@ -1250,11 +1250,16 @@ function openAddInc(){
 }
 window.openAddInc=openAddInc;
 function saveInc(){
-  const proj=document.getElementById('in-proj-custom').value.trim()||document.getElementById('in-proj').value;
-  const r={date:document.getElementById('in-date').value,cat:document.getElementById('in-cat').value,
-    project:proj,amount:Number(document.getElementById('in-amount').value),
-    note:document.getElementById('in-note').value};
-  if(r.date&&r.amount){IN.push(r);}
+  const dateVal=document.getElementById('in-date')?.value;
+  const catVal=document.getElementById('in-cat')?.value||'其他';
+  const proj=document.getElementById('in-proj-custom')?.value.trim()||document.getElementById('in-proj')?.value||'';
+  const amtVal=document.getElementById('in-amount')?.value;
+  const noteVal=document.getElementById('in-note')?.value||'';
+  const amount=Number(amtVal);
+  if(!dateVal){alert('請填入日期');return;}
+  if(!amount||amount<=0){alert('請填入金額');return;}
+  const r={date:dateVal,cat:catVal,project:proj,amount:amount,note:noteVal};
+  IN.push(r);
   closeModal();rIncome();save();
 }
 window.saveInc=saveInc;
