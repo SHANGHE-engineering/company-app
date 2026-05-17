@@ -909,7 +909,7 @@ function openAddPunch(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">下班時間</div>
       <input type="time" id="p-out" style="width:100%"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">去向</div>
-      <select id="p-loc"><option value="?">？（未知）</option>${locOpts(key)}</select></div>`,'savePunch()');
+      <select id="p-loc"><option value="?">？（未知）</option>${locOpts(key)}</select></div>`,window.savePunch);
 }
 window.openAddPunch=openAddPunch;
 function savePunch(){
@@ -991,7 +991,7 @@ function openAddExp(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
       <input type="number" id="e-amt" placeholder="0"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">付款人</div>
-      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>`,'saveExp()');
+      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>`,window.saveExp);
 }
 window.openAddExp=openAddExp;
 function saveExp(){
@@ -1253,7 +1253,7 @@ function openAddInc(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
       <input type="number" id="in-amount" placeholder="0"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">備註</div>
-      <input type="text" id="in-note" placeholder="選填"></div>`,'saveInc()');
+      <input type="text" id="in-note" placeholder="選填"></div>`,window.saveInc);
 }
 window.openAddInc=openAddInc;
 function saveInc(){
@@ -1587,10 +1587,21 @@ function openModal(title,body,sc){
   document.body.appendChild(bg);
   document.getElementById('modal-cancel-btn')?.addEventListener('click',closeModal);
   if(sc){
-    document.getElementById('modal-ok-btn')?.addEventListener('click',()=>{
-      // 用 Function 方式執行，確保能存取 window 上的函式
-      try{ new Function(sc)(); } catch(err){ console.error('modal action error:',err); }
-    });
+    const okBtn=document.getElementById('modal-ok-btn');
+    if(okBtn){
+      // sc 可以是函式或字串
+      if(typeof sc==='function'){
+        okBtn.addEventListener('click',sc);
+      } else {
+        // 字串形式：從 window 找對應函式
+        const fnName=sc.replace(/\(.*\)$/,'').trim();
+        const args=sc.match(/\(([^)]*)\)/)?.[1]||'';
+        okBtn.addEventListener('click',()=>{
+          if(window[fnName]) window[fnName](...(args?[args]:[]));
+          else console.error('找不到函式:',fnName);
+        });
+      }
+    }
   }
 }
 function closeModal(){const m=document.getElementById('mbg');if(m)m.remove();}
