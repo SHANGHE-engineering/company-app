@@ -995,9 +995,16 @@ function openAddExp(){
 }
 window.openAddExp=openAddExp;
 function saveExp(){
-  const e={date:document.getElementById('e-date').value,cat:document.getElementById('e-cat').value,
-    desc:document.getElementById('e-desc').value,amount:Number(document.getElementById('e-amt').value),payer:document.getElementById('e-payer').value};
-  if(e.date&&e.amount)EX.push(e);closeModal();rExpense();save();
+  const dateVal=document.getElementById('e-date').value;
+  const e={date:dateVal,cat:document.getElementById('e-cat').value,
+    desc:document.getElementById('e-desc').value,amount:Number(document.getElementById('e-amt').value),
+    payer:document.getElementById('e-payer').value};
+  if(e.date&&e.amount){
+    EX.push(e);
+    expY=Number(dateVal.slice(0,4));
+    expM=Number(dateVal.slice(5,7));
+  }
+  closeModal();rExpense();save();
 }
 window.saveExp=saveExp;
 
@@ -1260,6 +1267,9 @@ function saveInc(){
   if(!amount||amount<=0){alert('請填入金額');return;}
   const r={date:dateVal,cat:catVal,project:proj,amount:amount,note:noteVal};
   IN.push(r);
+  // 自動切換到該筆記錄的月份
+  incY=Number(dateVal.slice(0,4));
+  incM=Number(dateVal.slice(5,7));
   closeModal();rIncome();save();
 }
 window.saveInc=saveInc;
