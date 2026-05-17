@@ -390,8 +390,14 @@ function chipH(key,name){
 }
 function locOpts(key,sel=''){return '<option value="">—</option>'+getMD(key).locTypes.map(l=>`<option ${sel===l.name?'selected':''}>${l.name}</option>`).join('');}
 function catOpts(sel=''){return G.expCats.map(c=>`<option ${sel===c?'selected':''}>${c}</option>`).join('');}
-function empAdv(name){return EX.filter(e=>e.payer===name).reduce((s,e)=>s+e.amount,0);}
-function empAdvL(name){return EX.filter(e=>e.payer===name);}
+function empAdv(name,key){
+  const k=key||salKey();
+  return EX.filter(e=>e.payer===name&&e.date&&e.date.startsWith(k)).reduce((s,e)=>s+e.amount,0);
+}
+function empAdvL(name,key){
+  const k=key||salKey();
+  return EX.filter(e=>e.payer===name&&e.date&&e.date.startsWith(k));
+}
 function allKeys(){
   const s=new Set();Object.keys(MD).forEach(k=>s.add(k));EX.forEach(e=>s.add(e.date.slice(0,7)));
   return [...s].sort().reverse();
@@ -441,7 +447,7 @@ function rSummary(){
   const byCat={};mEx.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
   const totalExp=Object.values(byCat).reduce((a,b)=>a+b,0);
   const totalCost=totalSal+totalExp;
-  const totalAdv=md.employees.reduce((s,e)=>s+empAdv(e.name),0);
+  const totalAdv=md.employees.reduce((s,e)=>s+empAdv(e.name,m),0);
   const mns=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
   const att=md.employees.filter(e=>(ed[e.name]||{days:0}).days>0);
   let h=`<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap">
@@ -458,7 +464,7 @@ function rSummary(){
   <div class="card" style="margin:0"><div class="stitle">員工薪資 + 代墊</div>
   <table><thead><tr><th>姓名</th><th>薪資</th><th>代墊</th><th>合計</th></tr></thead><tbody>`;
   md.employees.filter(e=>(ed[e.name]||{days:0}).days>0||empAdv(e.name)>0).forEach(e=>{
-    const d=ed[e.name]||{net:0};const adv=empAdv(e.name);
+    const d=ed[e.name]||{net:0};const adv=empAdv(e.name,salKey());
     h+=`<tr><td style="font-weight:500">${e.name}</td><td>$${d.net.toLocaleString()}</td>
       <td>${adv>0?`<span style="color:#534AB7">$${adv.toLocaleString()}</span>`:'—'}</td>
       <td style="font-weight:500;color:#1D9E75">$${(d.net+adv).toLocaleString()}</td></tr>`;
@@ -665,7 +671,7 @@ function rSalary(){
     <div class="mt"><div class="mt-l">加班時數</div><div class="mt-v amber">${tot.ot.toFixed(1)} hr</div></div>
     <div class="mt"><div class="mt-l">遲到次數</div><div class="mt-v red">${tot.late} 次</div></div>`;
   document.getElementById('sal-body').innerHTML=md.employees.map(e=>{
-    const d=ed[e.name]||{days:0,ot:0,late:0,basePay:0,lateFine:0,drivePay:0,net:0};const adv=empAdv(e.name);
+    const d=ed[e.name]||{days:0,ot:0,late:0,basePay:0,lateFine:0,drivePay:0,net:0};const adv=empAdv(e.name,salKey());
     return `<tr><td style="font-weight:500">${e.name}</td><td>${e.wage.toLocaleString()}</td>
     <td>${d.days}</td><td>${d.ot.toFixed(1)}</td>
     <td>${d.late>0?`<span class="badge bg-red">${d.late}</span>`:'0'}</td>
@@ -683,7 +689,7 @@ function selEmp(n){actEmp=n;document.querySelectorAll('.etab').forEach(el=>el.cl
 window.selEmp=selEmp;
 function rEmpDetail(ed,key,md){
   const ec=md.employees.find(e=>e.name===actEmp);if(!ec)return;
-  const d=ed[actEmp]||{days:0,ot:0,late:0,net:0,drivePay:0};const adv=empAdv(actEmp);
+  const d=ed[actEmp]||{days:0,ot:0,late:0,net:0,drivePay:0};const adv=empAdv(actEmp,salKey());
   document.getElementById('esum').innerHTML=`
     <div class="esi"><div class="esi-l">出勤天數</div><div class="esi-v">${d.days} 天</div></div>
     <div class="esi"><div class="esi-l">加班時數</div><div class="esi-v" style="color:#BA7517">${d.ot.toFixed(1)} hr</div></div>
@@ -743,7 +749,7 @@ function rEmpDetail(ed,key,md){
                <button class="btn btn-sm" onclick="delPunch('${key}','${p.date}')"><i class="ti ti-trash"></i></button>`
           }
         </td></tr>`;}).join('');
-  const al=empAdvL(actEmp);
+  const al=empAdvL(actEmp,salKey());
   document.getElementById('adv-body').innerHTML=!al.length
     ?`<tr><td colspan="4" style="text-align:center;color:#888;padding:1.5rem">本員工無代墊支出</td></tr>`
     :al.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>
@@ -941,10 +947,38 @@ function rExpense(){
     :mEx.map((e,i)=>{const gi=EX.indexOf(e);
     return `<tr><td>${e.date.slice(5)}</td><td><span class="badge bg-gray">${e.cat}</span></td><td>${e.desc}</td>
     <td style="font-weight:500">$${e.amount.toLocaleString()}</td><td>${e.payer||'—'}</td>
-    <td><button class="btn btn-sm" onclick="delExp(${gi})"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');
+    <td style="white-space:nowrap">
+      <button class="btn btn-sm" style="margin-right:4px" onclick="editExp(${gi})"><i class="ti ti-pencil"></i></button>
+      <button class="btn btn-sm" onclick="delExp(${gi})"><i class="ti ti-trash"></i></button>
+    </td></tr>`;}).join('');
 }
 function delExp(i){if(confirm('確定刪除？')){EX.splice(i,1);rExpense();save();}}
 window.delExp=delExp;
+function editExp(i){
+  const e=EX[i];if(!e)return;
+  const md=salMD();
+  const catOpts=G.expCats.map(c=>`<option ${e.cat===c?'selected':''}>${c}</option>`).join('');
+  openModal('編輯支出',`
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">日期</div>
+      <input type="date" id="e-date" value="${e.date}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">類別</div>
+      <select id="e-cat">${catOpts}</select></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">說明</div>
+      <input type="text" id="e-desc" value="${e.desc||''}" style="width:100%"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
+      <input type="number" id="e-amt" value="${e.amount}"></div>
+    <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">付款人</div>
+      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(emp=>`<option ${e.payer===emp.name?'selected':''}>${emp.name}</option>`).join('')}</select></div>`,
+    `saveEditExp(${i})`);
+}
+window.editExp=editExp;
+function saveEditExp(i){
+  EX[i]={date:document.getElementById('e-date').value,cat:document.getElementById('e-cat').value,
+    desc:document.getElementById('e-desc').value,amount:Number(document.getElementById('e-amt').value),
+    payer:document.getElementById('e-payer').value};
+  closeModal();rExpense();save();
+}
+window.saveEditExp=saveEditExp;
 function openAddExp(){
   const md=salMD();
   openModal('新增支出',`
@@ -1196,6 +1230,8 @@ function rIncome(){
     }).join('');
 }
 function openAddInc(){
+  if(!G.incCats||!G.incCats.length) G.incCats=['工程款','材料款','設計費','驗收款','其他'];
+  if(!G.projects) G.projects=[];
   const projOpts=G.projects.map(p=>`<option value="${p.name}">${p.name}${p.contact?' ('+p.contact+')':''}</option>`).join('');
   const catOpts2=G.incCats.map(c=>`<option>${c}</option>`).join('');
   openModal('新增收入',`
