@@ -168,6 +168,12 @@ input:focus,select:focus { outline: none; border-color: #888; }
   </div>
 
   <div id="s-expense" class="sec">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+      <button class="btn" onclick="chExpMo(-1)"><i class="ti ti-chevron-left"></i></button>
+      <span style="font-size:15px;font-weight:500" id="exp-title"></span>
+      <button class="btn" onclick="chExpMo(1)"><i class="ti ti-chevron-right"></i></button>
+      <button class="btn btn-p" style="margin-left:auto" onclick="openAddExp()"><i class="ti ti-plus"></i> 新增支出</button>
+    </div>
     <div class="mg" id="exp-mg"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
@@ -189,11 +195,7 @@ input:focus,select:focus { outline: none; border-color: #888; }
       <button class="btn btn-p" style="margin-left:auto" onclick="openAddInc()"><i class="ti ti-plus"></i> 新增收入</button>
     </div>
     <div class="mg" id="inc-metrics"></div>
-    <div class="card" style="margin-bottom:1rem">
-      <div class="stitle">收支結構</div>
-      <div id="inc-profit-bar" style="display:flex;height:18px;border-radius:9px;overflow:hidden;gap:2px;margin-bottom:8px"></div>
-      <div id="inc-profit-label" style="display:flex;gap:16px;font-size:12px;color:#888"></div>
-    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
       <div class="card" style="margin:0">
         <div class="stitle">本月收入明細</div>
@@ -353,7 +355,7 @@ let IN = []; // 收入記錄 [{date,cat,project,amount,note}]
 const _now=new Date();
 const _prevM=_now.getMonth()===0?12:_now.getMonth();
 const _prevY=_now.getMonth()===0?_now.getFullYear()-1:_now.getFullYear();
-let calY=_prevY, calM=_prevM, salY=_prevY, salM=_prevM, incY=_prevY, incM=_prevM, actEmp=null, cfgKey=`${_prevY}-${String(_prevM).padStart(2,'0')}`;
+let calY=_prevY, calM=_prevM, salY=_prevY, salM=_prevM, incY=_prevY, incM=_prevM, expY=_prevY, expM=_prevM, actEmp=null, cfgKey=`${_prevY}-${String(_prevM).padStart(2,'0')}`;
 
 function pad(n){return String(n).padStart(2,'0');}
 function ds(y,m,d){return `${y}-${pad(m)}-${pad(d)}`;}
@@ -414,7 +416,8 @@ function T(t){
   if(t==='summary'){iSumSel();rSummary();}
   if(t==='calendar') rCal();
   if(t==='salary'){salY=calY;salM=calM;rSalary();}
-  if(t==='expense') rExpense();
+  if(t==='expense'){expY=_prevY;expM=_prevM;rExpense();}
+  if(t==='income'){rIncome();}
   if(t==='settings') rSettings();
 }
 window.T=T;
@@ -922,17 +925,23 @@ window.savePunch=savePunch;
 
 // ── 支出 ──
 function rExpense(){
+  const mns=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const titleEl=document.getElementById('exp-title');
+  if(titleEl) titleEl.textContent=`${expY}年 ${mns[expM-1]}`;
+  const key=`${expY}-${pad(expM)}`;
+  const mEx=EX.filter(e=>e.date&&e.date.startsWith(key));
   const byCat={};G.expCats.forEach(c=>byCat[c]=0);let total=0;
-  EX.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;total+=e.amount;});
+  mEx.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;total+=e.amount;});
   const top=Object.entries(byCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   document.getElementById('exp-mg').innerHTML=
-    `<div class="mt"><div class="mt-l">支出總計</div><div class="mt-v red">$${total.toLocaleString()}</div></div>`+
+    `<div class="mt"><div class="mt-l">本月支出</div><div class="mt-v red">$${total.toLocaleString()}</div></div>`+
     top.slice(0,3).map(([c,v])=>`<div class="mt"><div class="mt-l">${c}</div><div class="mt-v amber">$${v.toLocaleString()}</div></div>`).join('');
-  const md=calMD();
-  document.getElementById('exp-body').innerHTML=EX.map((e,i)=>
-    `<tr><td>${e.date.slice(5)}</td><td><span class="badge bg-gray">${e.cat}</span></td><td>${e.desc}</td>
+  document.getElementById('exp-body').innerHTML=!mEx.length
+    ?`<tr><td colspan="6" style="text-align:center;color:#888;padding:1.5rem">本月無支出記錄</td></tr>`
+    :mEx.map((e,i)=>{const gi=EX.indexOf(e);
+    return `<tr><td>${e.date.slice(5)}</td><td><span class="badge bg-gray">${e.cat}</span></td><td>${e.desc}</td>
     <td style="font-weight:500">$${e.amount.toLocaleString()}</td><td>${e.payer||'—'}</td>
-    <td><button class="btn btn-sm" onclick="delExp(${i})"><i class="ti ti-trash"></i></button></td></tr>`).join('');
+    <td><button class="btn btn-sm" onclick="delExp(${gi})"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');
 }
 function delExp(i){if(confirm('確定刪除？')){EX.splice(i,1);rExpense();save();}}
 window.delExp=delExp;
@@ -1123,6 +1132,8 @@ window.addCat=addCat;
 function incKey(){return `${incY}-${pad(incM)}`;}
 function chIncMo(d){incM+=d;if(incM>12){incM=1;incY++;}if(incM<1){incM=12;incY--;}rIncome();}
 window.chIncMo=chIncMo;
+function chExpMo(d){expM+=d;if(expM>12){expM=1;expY++;}if(expM<1){expM=12;expY--;}rExpense();}
+window.chExpMo=chExpMo;
 
 function rIncome(){
   const mns=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
@@ -1132,16 +1143,7 @@ function rIncome(){
   const mInc=IN.filter(r=>r.date&&r.date.startsWith(key)).sort((a,b)=>a.date.localeCompare(b.date));
   const totalInc=mInc.reduce((s,r)=>s+r.amount,0);
 
-  // 取得當月支出
-  const mEx=EX.filter(e=>e.date&&e.date.startsWith(key));
-  const totalExp=mEx.reduce((s,e)=>s+e.amount,0);
-  // 取得薪資
-  const md=getMD(key);
-  const ed=calcED(key);
-  let totalSal=0;md.employees.forEach(e=>{totalSal+=(ed[e.name]||{net:0}).net;});
-  const totalCost=totalExp+totalSal;
-  const profit=totalInc-totalCost;
-  const profitRate=totalInc>0?Math.round(profit/totalInc*100):0;
+
 
   // 指標
   document.getElementById('inc-metrics').innerHTML=`
@@ -1150,19 +1152,7 @@ function rIncome(){
     <div class="mt"><div class="mt-l">本月利潤</div><div class="mt-v" style="color:${profit>=0?'#1D9E75':'#A32D2D'}">$${profit.toLocaleString()}</div></div>
     <div class="mt"><div class="mt-l">利潤率</div><div class="mt-v" style="color:${profitRate>=0?'#BA7517':'#A32D2D'}">${profitRate}%</div></div>`;
 
-  // 收支條
-  const bar=document.getElementById('inc-profit-bar');
-  const label=document.getElementById('inc-profit-label');
-  if(totalInc+totalCost>0){
-    const ip=totalInc>0?Math.round(totalInc/(totalInc+totalCost)*100):0;
-    bar.innerHTML=`
-      <div style="width:${ip}%;background:#1D9E75;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${ip>8?ip+'%':''}</div>
-      <div style="width:${100-ip}%;background:#E24B4A;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:500">${100-ip>8?(100-ip)+'%':''}</div>`;
-    label.innerHTML=`<span>● 收入 $${totalInc.toLocaleString()}</span><span>● 支出 $${totalCost.toLocaleString()}</span><span style="font-weight:500;color:#1a1a1a">淨利 $${profit.toLocaleString()}</span>`;
-  } else {
-    bar.innerHTML='<div style="width:100%;background:#f0ede8;border-radius:9px;height:18px"></div>';
-    label.innerHTML='<span style="color:#bbb">本月尚無收入資料</span>';
-  }
+
 
   // 收入明細
   document.getElementById('inc-body').innerHTML=!mInc.length
