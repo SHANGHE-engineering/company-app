@@ -1581,10 +1581,17 @@ function openModal(title,body,sc){
   bg.onclick=e=>{if(e.target===bg)closeModal();};
   bg.innerHTML=`<div class="mbox"><div style="font-size:15px;font-weight:500;margin-bottom:1rem">${title}</div>${body}
     <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
-      <button class="btn" onclick="closeModal()">取消</button>
-      ${sc?`<button class="btn btn-p" onclick="${sc}">儲存</button>`:''}
+      <button class="btn" id="modal-cancel-btn">取消</button>
+      ${sc?`<button class="btn btn-p" id="modal-ok-btn">儲存</button>`:''}
     </div></div>`;
   document.body.appendChild(bg);
+  document.getElementById('modal-cancel-btn')?.addEventListener('click',closeModal);
+  if(sc){
+    document.getElementById('modal-ok-btn')?.addEventListener('click',()=>{
+      // 用 Function 方式執行，確保能存取 window 上的函式
+      try{ new Function(sc)(); } catch(err){ console.error('modal action error:',err); }
+    });
+  }
 }
 function closeModal(){const m=document.getElementById('mbg');if(m)m.remove();}
 window.openModal=openModal;window.closeModal=closeModal;
