@@ -1257,17 +1257,23 @@ function openAddInc(){
 }
 window.openAddInc=openAddInc;
 function saveInc(){
-  const dateVal=document.getElementById('in-date')?.value;
-  const catVal=document.getElementById('in-cat')?.value||'其他';
+  const dateEl=document.getElementById('in-date');
+  const catEl=document.getElementById('in-cat');
+  const amtEl=document.getElementById('in-amount');
+  console.log('saveInc called, dateEl=',dateEl,'catEl=',catEl,'amtEl=',amtEl);
+  const dateVal=dateEl?.value;
+  const catVal=catEl?.value||'其他';
   const proj=document.getElementById('in-proj-custom')?.value.trim()||document.getElementById('in-proj')?.value||'';
-  const amtVal=document.getElementById('in-amount')?.value;
+  const amtVal=amtEl?.value;
   const noteVal=document.getElementById('in-note')?.value||'';
   const amount=Number(amtVal);
+  console.log('values:', {dateVal,catVal,proj,amtVal,amount});
   if(!dateVal){alert('請填入日期');return;}
   if(!amount||amount<=0){alert('請填入金額');return;}
   const r={date:dateVal,cat:catVal,project:proj,amount:amount,note:noteVal};
+  console.log('pushing record:', r, 'IN before:', IN.length);
   IN.push(r);
-  // 自動切換到該筆記錄的月份
+  console.log('IN after:', IN.length);
   incY=Number(dateVal.slice(0,4));
   incM=Number(dateVal.slice(5,7));
   closeModal();rIncome();save();
