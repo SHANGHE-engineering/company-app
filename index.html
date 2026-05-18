@@ -1184,14 +1184,10 @@ function rIncome(){
   const mInc=IN.filter(r=>r.date&&r.date.startsWith(key)).sort((a,b)=>a.date.localeCompare(b.date));
   const totalInc=mInc.reduce((s,r)=>s+r.amount,0);
 
-
-
-  // 指標
+  // 指標（只顯示收入相關）
   document.getElementById('inc-metrics').innerHTML=`
     <div class="mt"><div class="mt-l">本月收入</div><div class="mt-v green">$${totalInc.toLocaleString()}</div></div>
-    <div class="mt"><div class="mt-l">本月總支出</div><div class="mt-v red">$${totalCost.toLocaleString()}</div></div>
-    <div class="mt"><div class="mt-l">本月利潤</div><div class="mt-v" style="color:${profit>=0?'#1D9E75':'#A32D2D'}">$${profit.toLocaleString()}</div></div>
-    <div class="mt"><div class="mt-l">利潤率</div><div class="mt-v" style="color:${profitRate>=0?'#BA7517':'#A32D2D'}">${profitRate}%</div></div>`;
+    <div class="mt"><div class="mt-l">收入筆數</div><div class="mt-v blue">${mInc.length} 筆</div></div>`;
 
 
 
