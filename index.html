@@ -553,7 +553,7 @@ function clickDay(dstr){
         <div style="font-size:13px;font-weight:500;margin-bottom:6px">${e.name}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${boxes}</div>
       </div>`;
-    }).join(''),`saveDayLoc('${dstr}')`);
+    }).join(''),()=>saveDayLoc(dstr));
 }
 window.clickDay=clickDay;
 function saveDayLoc(dstr){
@@ -812,7 +812,7 @@ function editPunch(key,dateStr){
         <button type="button" class="btn btn-sm" onclick="resetDriveFee()">預設值</button>
       </div>
     </div>`,
-    `saveEditPunch('${key}','${p.date}')`);
+    ()=>saveEditPunch(key,p.date));
 }
 window.editPunch=editPunch;
 function toggleDriveInput(){
@@ -909,7 +909,7 @@ function openAddPunch(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">下班時間</div>
       <input type="time" id="p-out" style="width:100%"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">去向</div>
-      <select id="p-loc"><option value="?">？（未知）</option>${locOpts(key)}</select></div>`,window.savePunch);
+      <select id="p-loc"><option value="?">？（未知）</option>${locOpts(key)}</select></div>`,savePunch);
 }
 window.openAddPunch=openAddPunch;
 function savePunch(){
@@ -969,7 +969,7 @@ function editExp(i){
       <input type="number" id="e-amt" value="${e.amount}"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">付款人</div>
       <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(emp=>`<option ${e.payer===emp.name?'selected':''}>${emp.name}</option>`).join('')}</select></div>`,
-    `saveEditExp(${i})`);
+    ()=>saveEditExp(i));
 }
 window.editExp=editExp;
 function saveEditExp(i){
@@ -991,7 +991,7 @@ function openAddExp(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
       <input type="number" id="e-amt" placeholder="0"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">付款人</div>
-      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>`,window.saveExp);
+      <select id="e-payer"><option value="">— 非員工付款 —</option>${md.employees.map(e=>`<option>${e.name}</option>`).join('')}</select></div>`,saveExp);
 }
 window.openAddExp=openAddExp;
 function saveExp(){
@@ -1253,7 +1253,7 @@ function openAddInc(){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
       <input type="number" id="in-amount" placeholder="0"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">備註</div>
-      <input type="text" id="in-note" placeholder="選填"></div>`,window.saveInc);
+      <input type="text" id="in-note" placeholder="選填"></div>`,saveInc);
 }
 window.openAddInc=openAddInc;
 function saveInc(){
@@ -1289,7 +1289,7 @@ function editInc(i){
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">金額（元）</div>
       <input type="number" id="in-amount" value="${r.amount}"></div>
     <div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:3px">備註</div>
-      <input type="text" id="in-note" value="${r.note||''}"></div>`,`saveEditInc(${i})`);
+      <input type="text" id="in-note" value="${r.note||''}"></div>`,()=>saveEditInc(i));
 }
 window.editInc=editInc;
 function saveEditInc(i){
@@ -1576,33 +1576,26 @@ function clearOcr(){
 window.clearOcr=clearOcr;
 
 // ── modal ──
-function openModal(title,body,sc){
+function openModal(title,body,confirmFn){
   const bg=document.createElement('div');bg.className='mbg';bg.id='mbg';
   bg.onclick=e=>{if(e.target===bg)closeModal();};
-  bg.innerHTML=`<div class="mbox"><div style="font-size:15px;font-weight:500;margin-bottom:1rem">${title}</div>${body}
-    <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
-      <button class="btn" id="modal-cancel-btn">取消</button>
-      ${sc?`<button class="btn btn-p" id="modal-ok-btn">儲存</button>`:''}
-    </div></div>`;
-  document.body.appendChild(bg);
-  document.getElementById('modal-cancel-btn')?.addEventListener('click',closeModal);
-  if(sc){
-    const okBtn=document.getElementById('modal-ok-btn');
-    if(okBtn){
-      // sc 可以是函式或字串
-      if(typeof sc==='function'){
-        okBtn.addEventListener('click',sc);
-      } else {
-        // 字串形式：從 window 找對應函式
-        const fnName=sc.replace(/\(.*\)$/,'').trim();
-        const args=sc.match(/\(([^)]*)\)/)?.[1]||'';
-        okBtn.addEventListener('click',()=>{
-          if(window[fnName]) window[fnName](...(args?[args]:[]));
-          else console.error('找不到函式:',fnName);
-        });
-      }
-    }
+  const box=document.createElement('div');box.className='mbox';
+  box.innerHTML=`<div style="font-size:15px;font-weight:500;margin-bottom:1rem">${title}</div>${body}`;
+  const btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:8px;margin-top:1rem;justify-content:flex-end';
+  const cancelBtn=document.createElement('button');
+  cancelBtn.className='btn';cancelBtn.textContent='取消';
+  cancelBtn.addEventListener('click',closeModal);
+  btns.appendChild(cancelBtn);
+  if(confirmFn){
+    const okBtn=document.createElement('button');
+    okBtn.className='btn btn-p';okBtn.textContent='儲存';
+    okBtn.addEventListener('click',()=>{ confirmFn(); });
+    btns.appendChild(okBtn);
   }
+  box.appendChild(btns);
+  bg.appendChild(box);
+  document.body.appendChild(bg);
 }
 function closeModal(){const m=document.getElementById('mbg');if(m)m.remove();}
 window.openModal=openModal;window.closeModal=closeModal;
