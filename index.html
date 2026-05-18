@@ -570,57 +570,105 @@ window.saveDayLoc=saveDayLoc;
 
 // ── 薪資 ──
 // ── 薪資計算核心 ──
-// 計算單筆打卡的工時、加班時數、遲到
+// 取得去向的車程分鐘（來回）
+function getTravelMin(key, locStr){
+  if(!locStr) return 0;
+  const md=getMD(key);
+  // 支援多地點「/」分隔，取最大車程
+  const locs=locStr.split('/');
+  let maxTravel=0;
+  locs.forEach(name=>{
+    const lt=md.locTypes.find(l=>l.name===name);
+    if(lt&&lt.travel) maxTravel=Math.max(maxTravel,lt.travel);
+  });
+  return maxTravel; // 已是來回分鐘
+}
+
+// 計算加班費（時薪×2.33×時數，四捨五入到十位）
+function calcOtPay(wage, hours){
+  if(hours<=0) return 0;
+  const hourly=wage/8;
+  const otHourly=hourly*1.33+hourly;
+  return Math.round(otHourly*hours/10)*10;
+}
+
+// 計算單筆打卡的工時、遲到
 function calcP(p){
-  if(!p.in||!p.out) return{hours:0,ot:0,autoOt:0,late:false,isSunday:false,outMin:0};
+  if(!p.in||!p.out) return{hours:0,ot:0,autoOt:0,late:false,isSunday:false,outMin:0,adjustedOutMin:0};
   const[ih,im]=p.in.split(':').map(Number);
   const[oh,om]=p.out.split(':').map(Number);
-  const[sh,sm]=G.startTime.split(':').map(Number); // 標準上班時間 (預設 08:00)
-  const totalMin=(oh*60+om)-(ih*60+im)-G.breakMin;
+  const[sh,sm]=G.startTime.split(':').map(Number);
+  const totalMin=((oh*60+om)-(ih*60+im)-G.breakMin);
   const hours=Math.max(0,totalMin/60);
-  // 8:00 前打卡不算加班起點，超過 8 小時才算加班
-  const stdStart=sh*60+sm; // 480 = 08:00
-  const actualStart=Math.max(ih*60+im, stdStart); // 最早從 8:00 開始算
-  const workMin=(oh*60+om)-actualStart-G.breakMin;
-  const autoOt=Math.max(0,(workMin/60)-G.hours);
+  const autoOt=Math.max(0,hours-G.hours);
   const ot=(p.manualOt!=null)?p.manualOt:autoOt;
-  const sysLate=(ih*60+im)>(stdStart+G.grace);
+  const sysLate=(ih*60+im)>(sh*60+sm+G.grace);
   const late=p.manualLate!=null?p.manualLate:sysLate;
   const isSunday=new Date(p.date).getDay()===0;
-  return{hours,ot,autoOt,late,isSunday,outMin:oh*60+om};
+  const outMin=oh*60+om;
+  // 下班時間轉換為當天分鐘（跨午夜加 1440）
+  const adjustedOutMin=outMin<8*60?outMin+1440:outMin; // 凌晨視為當天延伸
+  return{hours,ot,autoOt,late,isSunday,outMin,adjustedOutMin};
 }
 
-// 計算單筆打卡的日薪金額
-function calcDailyPay(p, wage){
+// 計算單筆打卡的日薪金額（平日新公式）
+function calcDailyPay(p, wage, key){
   if(!p.in||!p.out) return 0;
-  const{hours,ot,isSunday,outMin}=calcP(p);
+  const{hours,isSunday,adjustedOutMin}=calcP(p);
   if(hours===0) return 0;
-  const hourly=wage/G.hours; // 時薪
-  // 加班費：(時薪×1.33+時薪)×時數，四捨五入到十位
-  const otHourly=hourly*1.33+hourly; // 時薪 × 2.33
-  const otPay=Math.round(otHourly*ot/10)*10;
 
-  // 手動半天
+  // 手動加班費（星期日/節日用）
+  if(p.manualOtPay!=null) return wage + p.manualOtPay;
+
+  // 半天
   if(p.halfDay) return Math.round(wage/2);
 
-  // 星期日特殊規則（以下班時間判斷）
-  if(isSunday){
-    if(outMin < 15*60)       return Math.round(wage*1.5);  // 15:00 前 → 1.5 天
-    else if(outMin < 17*60)  return wage*2;                // 15:00~17:00 → 2 天
-    else if(outMin < 20*60)  return Math.round(wage*2.5);  // 17:00~20:00 → 2.5 天
-    else                     return wage*3;                // 20:00 後 → 3 天
+  // 星期日：不用系統算，純手動
+  if(isSunday) return wage;
+
+  // 取得去向車程（來回分鐘）
+  const travelMin=getTravelMin(key||'', p.loc||'');
+  // 扣除車程後的實際下班分鐘
+  const realOutMin=adjustedOutMin - travelMin;
+
+  // 轉換為 0~2400+ 的分鐘表示（17:00 = 1020）
+  // 超過24:00的用 1440+ 表示
+  const h = Math.floor(realOutMin/60) % 24;
+  const realHour = realOutMin >= 1440 ? (realOutMin-1440)/60 : realOutMin/60;
+
+  // 套用規則
+  if(realOutMin < 17*60+59){
+    // 17:59 前 → 日薪
+    return wage;
+  } else if(realOutMin < 22*60){
+    // 18:00 ~ 21:59 → 日薪 + 加班費（從18:00算）
+    const otHours=(realOutMin - 18*60)/60;
+    return wage + calcOtPay(wage, otHours);
+  } else if(realOutMin < 23*60){
+    // 22:00 ~ 22:59 → 日薪 × 2
+    return wage * 2;
+  } else if(realOutMin < 24*60){
+    // 23:00 ~ 23:59 → 日薪 × 2 + 1h加班費
+    return wage * 2 + calcOtPay(wage, 1);
+  } else if(realOutMin < 25*60){
+    // 00:00 ~ 00:59 → 日薪 × 2 + 2h加班費
+    return wage * 2 + calcOtPay(wage, 2);
+  } else if(realOutMin < 26*60){
+    // 01:00 ~ 01:59 → 日薪 × 2 + 3h加班費
+    return wage * 2 + calcOtPay(wage, 3);
+  } else if(realOutMin < 27*60){
+    // 02:00 ~ 02:59 → 日薪 × 3
+    return wage * 3;
+  } else if(realOutMin < 28*60){
+    // 03:00 ~ 03:59 → 日薪 × 3 + 1h加班費
+    return wage * 3 + calcOtPay(wage, 1);
+  } else if(realOutMin < 29*60){
+    // 04:00 ~ 04:59 → 日薪 × 3 + 2h加班費
+    return wage * 3 + calcOtPay(wage, 2);
+  } else {
+    // 05:00 後 → 日薪 × 4
+    return wage * 4;
   }
-
-  // 平日：日薪 + 加班費
-  return wage+otPay;
-}
-
-// 取得該日期是該年第幾週（週一為起點）
-function getWeekId(dateStr){
-  const d=new Date(dateStr);
-  const day=d.getDay()||7; // 1=Mon..7=Sun
-  const monday=new Date(d);monday.setDate(d.getDate()-(day-1));
-  return monday.toISOString().slice(0,10);
 }
 function calcED(key){
   const md=getMD(key);const ed={};
@@ -644,7 +692,7 @@ function calcED(key){
         }
       }
       d.drivePay+=(p.driveFee||0);
-      d.basePay+=calcDailyPay(p,d.wage);
+      d.basePay+=calcDailyPay(p,d.wage,key);
     }
   });
   md.employees.forEach(e=>{
@@ -806,6 +854,14 @@ function editPunch(key,dateStr){
           <span>有開車</span>
         </label>
       </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid #f0ede8">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">手動加班費 <span style="color:#bbb">（星期日/節日用，填入後系統不自動計算）</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="ep-manual-ot-pay" value="${p.manualOtPay!=null?p.manualOtPay:''}" min="0" placeholder="留空=系統計算" style="width:130px">
+          <span style="font-size:12px;color:#888">元</span>
+          ${p.manualOtPay!=null?`<button type="button" class="btn btn-sm" onclick="document.getElementById('ep-manual-ot-pay').value=''">清除（改用系統）</button>`:''}
+        </div>
+      </div>
       <div id="ep-drive-row" style="display:${p.driveFee!=null?'flex':'none'};align-items:center;gap:8px;margin-top:8px">
         <input type="number" id="ep-drive-fee" value="${p.driveFee!=null?p.driveFee:200}" min="0" style="width:100px">
         <span style="font-size:12px;color:#888">元</span>
@@ -858,6 +914,9 @@ function saveEditPunch(key,dateStr){
   const lateChecked=document.getElementById('ep-late')?.checked||false;
   const{late:sysL}=calcP({...p,date:newDate,in:newIn,out:newOut});
   const manualLate=(lateChecked!==sysL)?lateChecked:null;
+  // 手動加班費（星期日/節日）
+  const manualOtPayVal=document.getElementById('ep-manual-ot-pay')?.value;
+  const manualOtPay=(manualOtPayVal!==''&&manualOtPayVal!=null)?Number(manualOtPayVal):null;
   // 計算系統自動值，看是否和手動值一致
   const[ih,im]=newIn.split(':').map(Number),[oh,om]=newOut.split(':').map(Number);
   const hours=Math.max(0,((oh*60+om)-(ih*60+im)-G.breakMin)/60);
@@ -877,6 +936,7 @@ function saveEditPunch(key,dateStr){
       if(driveFee!=null)np.driveFee=driveFee;else delete np.driveFee;
       if(halfDay)np.halfDay=true;else delete np.halfDay;
       if(manualLate!=null)np.manualLate=manualLate;else delete np.manualLate;
+      if(manualOtPay!=null)np.manualOtPay=manualOtPay;else delete np.manualOtPay;
       newMd.punches.push(np);
     } else {
       p.date=newDate;p.in=newIn;p.out=newOut;p.loc=newLoc;
@@ -884,6 +944,7 @@ function saveEditPunch(key,dateStr){
       if(driveFee!=null)p.driveFee=driveFee;else delete p.driveFee;
       if(halfDay)p.halfDay=true;else delete p.halfDay;
       if(manualLate!=null)p.manualLate=manualLate;else delete p.manualLate;
+      if(manualOtPay!=null)p.manualOtPay=manualOtPay;else delete p.manualOtPay;
       if(newLoc&&newLoc!=='?'){if(!md.locations[newDate])md.locations[newDate]={};md.locations[newDate][p.name]=newLoc;}
     }
   } else {
@@ -892,6 +953,7 @@ function saveEditPunch(key,dateStr){
     if(driveFee!=null)p.driveFee=driveFee;else delete p.driveFee;
     if(halfDay)p.halfDay=true;else delete p.halfDay;
     if(manualLate!=null)p.manualLate=manualLate;else delete p.manualLate;
+    if(manualOtPay!=null)p.manualOtPay=manualOtPay;else delete p.manualOtPay;
     if(newLoc&&newLoc!=='?'){if(!md.locations[p.date])md.locations[p.date]={};md.locations[p.date][p.name]=newLoc;}
   }
   closeModal();rSalary();save();
@@ -1114,17 +1176,27 @@ window.delEmp=delEmp;
 // 去向（按月，可編輯名稱）
 function rLocList(md){
   document.getElementById('loc-list').innerHTML=md.locTypes.map((l,i)=>`
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
       <span class="chip" style="background:${l.bg};color:${l.fg};min-width:76px">
         <span class="dot" style="background:${l.dot}"></span>
         <input type="text" value="${l.name}" onblur="renLoc(${i},this.value.trim())"
           style="border:none;background:transparent;color:${l.fg};font-size:11px;font-weight:500;width:62px;padding:0;font-family:inherit">
       </span>
-      <span style="font-size:11px;color:#888;flex-shrink:0">換色</span>
+      <span style="font-size:11px;color:#888">車程:</span>
+      <input type="number" value="${l.travel||0}" min="0" style="width:55px;font-size:12px;padding:2px 4px"
+        onblur="setTravel(${i},+this.value)">
+      <span style="font-size:11px;color:#888">分鐘</span>
+      <span style="font-size:11px;color:#888;margin-left:4px">換色</span>
       ${PAL.map((p,pi)=>`<span class="sw ${l.dot===p.dot?'sel':''}" style="background:${p.dot}" onclick="recolorLoc(${i},${pi})"></span>`).join('')}
       ${md.locTypes.length>1?`<button class="btn btn-sm" style="margin-left:auto" onclick="delLoc(${i})"><i class="ti ti-trash"></i></button>`:''}
     </div>`).join('');
 }
+function setTravel(i,mins){
+  const md=getMD(cfgKey);
+  md.locTypes[i].travel=mins;
+  save();
+}
+window.setTravel=setTravel;
 function renLoc(i,n){
   if(!n)return;const md=getMD(cfgKey);const old=md.locTypes[i].name;if(n===old)return;
   md.locTypes[i].name=n;
