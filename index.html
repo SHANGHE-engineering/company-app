@@ -597,17 +597,21 @@ function calcP(p){
   if(!p.in||!p.out) return{hours:0,ot:0,autoOt:0,late:false,isSunday:false,outMin:0,adjustedOutMin:0};
   const[ih,im]=p.in.split(':').map(Number);
   const[oh,om]=p.out.split(':').map(Number);
-  const[sh,sm]=G.startTime.split(':').map(Number);
-  const totalMin=((oh*60+om)-(ih*60+im)-G.breakMin);
-  const hours=Math.max(0,totalMin/60);
-  const autoOt=Math.max(0,hours-G.hours);
+  const[sh,sm]=G.startTime.split(':').map(Number); // 標準上班時間 08:00
+  const stdStart=sh*60+sm; // 480分鐘 = 08:00
+  // 8:00 前打卡，加班起算從 8:00 開始
+  const effectiveStart=Math.max(ih*60+im, stdStart);
+  const totalMin=((oh*60+om)-effectiveStart-G.breakMin);
+  const hours=Math.max(0,((oh*60+om)-(ih*60+im)-G.breakMin)/60); // 實際工時仍從打卡時間算
+  // 加班時數：從 8:00 開始算，超過標準工時才算
+  const autoOt=Math.max(0,((oh*60+om)-effectiveStart-G.breakMin)/60-G.hours);
   const ot=(p.manualOt!=null)?p.manualOt:autoOt;
-  const sysLate=(ih*60+im)>(sh*60+sm+G.grace);
+  const sysLate=(ih*60+im)>(stdStart+G.grace);
   const late=p.manualLate!=null?p.manualLate:sysLate;
   const isSunday=new Date(p.date).getDay()===0;
   const outMin=oh*60+om;
-  // 下班時間轉換為當天分鐘（跨午夜加 1440）
-  const adjustedOutMin=outMin<8*60?outMin+1440:outMin; // 凌晨視為當天延伸
+  // 下班時間跨午夜（凌晨）加 1440
+  const adjustedOutMin=outMin<8*60?outMin+1440:outMin;
   return{hours,ot,autoOt,late,isSunday,outMin,adjustedOutMin};
 }
 
@@ -784,10 +788,8 @@ function rEmpDetail(ed,key,md){
       // 類型標籤
       let typeTag='';
       if(p.halfDay) typeTag='<span class="badge" style="background:#FAEEDA;color:#854F0B">半天</span>';
-      else if(isSunday&&outMin<15*60)  typeTag='<span class="badge" style="background:#EEEDFE;color:#534AB7">日×1.5</span>';
-      else if(isSunday&&outMin<17*60)  typeTag='<span class="badge" style="background:#FAECE7;color:#993C1D">日×2</span>';
-      else if(isSunday&&outMin<20*60)  typeTag='<span class="badge" style="background:#FCEBEB;color:#A32D2D">日×2.5</span>';
-      else if(isSunday)                typeTag='<span class="badge" style="background:#A32D2D;color:#fff">日×3</span>';
+      else if(isSunday) typeTag='<span class="badge" style="background:#FCEBEB;color:#A32D2D">日</span>';
+      else if(p.manualOtPay!=null) typeTag='<span class="badge" style="background:#FAEEDA;color:#854F0B">手動</span>';
       return `<tr>
         <td>${dateLabel}</td>
         <td>${p.in||'—'}</td><td>${p.out||'—'}</td>
